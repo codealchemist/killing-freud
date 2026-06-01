@@ -1,0 +1,9 @@
+.DS_Store
+
+# Local Netlify folder
+.netlify
+
+# Environment variables (never commit these)
+.env
+node_modules
+dist

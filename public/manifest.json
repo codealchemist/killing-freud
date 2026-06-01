@@ -1,0 +1,16 @@
+{
+  "name": "Killing Freud",
+  "short_name": "Killing Freud",
+  "description": "Killing Freud — Official website",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
