@@ -1,31 +1,45 @@
 /**
  * Netlify Function: signal
  * GET  /api/signal?room=XXXX&role=offer|answer  → fetch SDP payload
- * POST /api/signal?room=XXXX&role=offer|answer  → store SDP payload (TTL 5 min)
+ * POST /api/signal?room=XXXX&role=offer|answer  → store SDP payload
  *
  * Used as the signaling channel for WebRTC DEMO share sessions.
  * Audio data travels P2P; only small SDP + ICE payloads pass through here.
+ * Entries are deleted after being read (single-use, implicit cleanup).
  */
 
 const { getStore } = require('@netlify/blobs')
 
 const VALID_ROLES = new Set(['offer', 'answer'])
-const TTL = 300 // 5 minutes
+
+function json(statusCode, body, extra = {}) {
+  return {
+    statusCode,
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', ...extra }
+  }
+}
 
 exports.handler = async function (event) {
   const { room, role } = event.queryStringParameters || {}
 
   if (!room || !role)
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing room or role' }), headers: { 'Content-Type': 'application/json' } }
+    return json(400, { error: 'Missing room or role' })
 
   if (!VALID_ROLES.has(role))
-    return { statusCode: 400, body: JSON.stringify({ error: 'role must be offer or answer' }), headers: { 'Content-Type': 'application/json' } }
+    return json(400, { error: 'role must be offer or answer' })
 
-  // Sanitise room ID: alphanumeric only, max 16 chars
   if (!/^[A-Z0-9]{4,16}$/i.test(room))
-    return { statusCode: 400, body: JSON.stringify({ error: 'Invalid room ID' }), headers: { 'Content-Type': 'application/json' } }
+    return json(400, { error: 'Invalid room ID' })
 
-  const store = getStore('webrtc-signals')
+  let store
+  try {
+    store = getStore('webrtc-signals')
+  } catch (err) {
+    console.error('Blobs init error:', err.message)
+    return json(503, { error: 'Signaling storage unavailable. Ensure Netlify Blobs is enabled for this site.' })
+  }
+
   const key = `${room.toUpperCase()}/${role}`
 
   if (event.httpMethod === 'POST') {
@@ -33,22 +47,30 @@ exports.handler = async function (event) {
     try {
       body = JSON.parse(event.body)
     } catch {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Invalid JSON' }), headers: { 'Content-Type': 'application/json' } }
+      return json(400, { error: 'Invalid JSON' })
     }
-
-    await store.setJSON(key, body, { ttl: TTL })
-    return { statusCode: 200, body: JSON.stringify({ ok: true }), headers: { 'Content-Type': 'application/json' } }
+    try {
+      await store.set(key, JSON.stringify(body))
+      return json(200, { ok: true })
+    } catch (err) {
+      console.error('Blobs set error:', err.message)
+      return json(500, { error: 'Failed to store signal' })
+    }
   }
 
   if (event.httpMethod === 'GET') {
-    const data = await store.get(key, { type: 'json' })
-    if (data == null)
-      return { statusCode: 404, body: JSON.stringify({ error: 'Not found' }), headers: { 'Content-Type': 'application/json' } }
+    try {
+      const result = await store.get(key, { type: 'json' })
+      if (result == null)
+        return json(404, { error: 'Not found' })
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      // Single-use: delete after the receiver/host reads it
+      store.delete(key).catch(() => {})
+
+      return json(200, result.data, { 'Cache-Control': 'no-store' })
+    } catch (err) {
+      console.error('Blobs get error:', err.message)
+      return json(500, { error: 'Failed to retrieve signal' })
     }
   }
 
