@@ -63,8 +63,8 @@ async function _openShareModal(tracks) {
     })
 
   try {
-    const result = await share.startAsHost()
-    shareUrl = result.shareUrl
+    const { roomId, shareUrl: url } = await share.startAsHost()
+    shareUrl = url
 
     if (codeEl) codeEl.textContent = roomId
     await renderQR(canvas, shareUrl)
