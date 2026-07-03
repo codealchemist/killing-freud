@@ -38,17 +38,32 @@ async function pollSignal(room, role, signal) {
   throw new DOMException('Aborted', 'AbortError')
 }
 
-async function waitForIceGathering(pc) {
-  if (pc.iceGatheringState === 'complete') return
-  return new Promise(resolve => {
-    function check() {
-      if (pc.iceGatheringState === 'complete') {
-        pc.removeEventListener('icegatheringstatechange', check)
-        resolve()
+async function waitForIceGathering(pc, timeoutMs = 5000) {
+  return Promise.race([
+    new Promise(resolve => {
+      if (pc.iceGatheringState === 'complete') { resolve(); return }
+
+      function onStateChange() {
+        if (pc.iceGatheringState === 'complete') { cleanup(); resolve() }
       }
-    }
-    pc.addEventListener('icegatheringstatechange', check)
-  })
+      // null candidate is the end-of-gathering signal (more reliable in Chrome)
+      function onCandidate(e) {
+        if (e.candidate === null) { cleanup(); resolve() }
+      }
+      function cleanup() {
+        pc.removeEventListener('icegatheringstatechange', onStateChange)
+        pc.removeEventListener('icecandidate', onCandidate)
+      }
+
+      pc.addEventListener('icegatheringstatechange', onStateChange)
+      pc.addEventListener('icecandidate', onCandidate)
+
+      // Double-check after adding listeners to close the race window
+      if (pc.iceGatheringState === 'complete') { cleanup(); resolve() }
+    }),
+    // Fallback: proceed with whatever candidates we have after timeout
+    new Promise(resolve => setTimeout(resolve, timeoutMs))
+  ])
 }
 
 export class DemoShare {
