@@ -1819,6 +1819,25 @@ cite {
   cursor: default;
 }
 
+.incoming-session__cancel {
+  padding: 10px 28px;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.incoming-session__cancel:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
 .incoming-session__status {
   font-size: 0.78rem;
   color: var(--text-muted);

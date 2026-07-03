@@ -143,8 +143,10 @@ export async function initIncomingSession(roomId, albumName) {
   const overlay    = document.getElementById('incomingSession')
   const codeEl     = document.getElementById('incomingCode')
   const albumEl    = document.getElementById('incomingAlbum')
+  const actionsEl  = document.getElementById('incomingActions')
   const acceptBtn  = document.getElementById('incomingAccept')
   const declineBtn = document.getElementById('incomingDecline')
+  const cancelBtn  = document.getElementById('incomingCancel')
   const status     = document.getElementById('incomingStatus')
   const progWrap   = document.getElementById('incomingProgressWrap')
   const progFill   = document.getElementById('incomingProgressFill')
@@ -174,14 +176,23 @@ export async function initIncomingSession(roomId, albumName) {
   }, { once: true })
 
   acceptBtn?.addEventListener('click', async () => {
-    acceptBtn.disabled = true
-    declineBtn.disabled = true
+    // Replace action buttons with a single Cancel button
+    actionsEl.hidden = true
+    cancelBtn.hidden = false
     status.textContent = 'Connecting…'
 
     const share = new DemoShare()
     const receivedFiles = []
     let _recvRafId = null
     let _recvRafPct = 0
+
+    const doCancel = () => {
+      share.destroy()
+      receivedFiles.length = 0
+      cancelAnimationFrame(_recvRafId)
+      closeOverlay()
+    }
+    cancelBtn.addEventListener('click', doCancel, { once: true })
 
     share
       .onFileReceived((info, blob) => {
@@ -201,6 +212,7 @@ export async function initIncomingSession(roomId, albumName) {
       .onComplete(async (albumName) => {
         cancelAnimationFrame(_recvRafId)
         _recvRafId = null
+        cancelBtn.hidden = true
         status.textContent = 'Done! Opening player…'
         progFill.style.width = '100%'
         progLabel.textContent = '100%'
@@ -210,17 +222,17 @@ export async function initIncomingSession(roomId, albumName) {
       })
       .onError(err => {
         status.textContent = `Error: ${err?.message ?? 'Connection failed'}`
-        acceptBtn.disabled = false
-        declineBtn.disabled = false
       })
 
     try {
       await share.joinAsReceiver(roomId)
       status.textContent = 'Waiting for files…'
     } catch (err) {
+      // Connection failed before starting — restore action buttons
+      cancelBtn.removeEventListener('click', doCancel)
+      cancelBtn.hidden = true
+      actionsEl.hidden = false
       status.textContent = err.message
-      acceptBtn.disabled = false
-      declineBtn.disabled = false
     }
   }, { once: true })
 }
