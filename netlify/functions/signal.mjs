@@ -3,9 +3,12 @@
  * GET  /api/signal?room=XXXX&role=offer|answer  → fetch SDP payload
  * POST /api/signal?room=XXXX&role=offer|answer  → store SDP payload
  *
- * Uses context.blobs (auto-injected in v2 functions, no extra config needed).
+ * Uses @netlify/blobs with context passed from the v2 handler — this is
+ * the only way to get Blobs working without manual siteID/token config.
  * Entries are deleted after being read — single-use implicit cleanup.
  */
+
+import { getStore } from '@netlify/blobs'
 
 const VALID_ROLES = new Set(['offer', 'answer'])
 
@@ -30,7 +33,7 @@ export default async function handler(request, context) {
   if (!/^[A-Z0-9]{4,16}$/i.test(room))
     return json({ error: 'Invalid room ID' }, 400)
 
-  const store = context.blobs.getStore('webrtc-signals')
+  const store = getStore({ name: 'webrtc-signals', context })
   const key = `${room.toUpperCase()}/${role}`
 
   if (request.method === 'POST') {
@@ -58,7 +61,7 @@ export default async function handler(request, context) {
       // Single-use: clean up after the peer reads it
       store.delete(key).catch(() => {})
 
-      return json(result.data)
+      return json(result)
     } catch (err) {
       console.error('signal: get failed', err.message)
       return json({ error: 'Failed to retrieve signal' }, 500)
