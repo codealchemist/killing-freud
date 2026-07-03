@@ -22,6 +22,7 @@ async function _openShareModal(tracks) {
   const progWrap = document.getElementById('shareProgressWrap')
   const progFill = document.getElementById('shareProgressFill')
   const progLabel = document.getElementById('shareProgressLabel')
+  const albumInput = document.getElementById('shareAlbumName')
   const copyBtn  = document.getElementById('shareCopyBtn')
   const closeBtn = document.getElementById('shareModalClose')
 
@@ -41,8 +42,9 @@ async function _openShareModal(tracks) {
   share
     .onPeerConnected(async () => {
       status.textContent = 'Peer connected — sending files…'
+      const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
       try {
-        await share.sendTracks(tracks)
+        await share.sendTracks(tracks, albumName)
       } catch (err) {
         status.textContent = `Transfer failed: ${err.message}`
       }
@@ -155,12 +157,12 @@ export async function initIncomingSession(roomId) {
         progLabel.textContent = `${pct}%`
         status.textContent = 'Receiving files…'
       })
-      .onComplete(async () => {
+      .onComplete(async (albumName) => {
         status.textContent = 'Done! Opening player…'
         progFill.style.width = '100%'
         progLabel.textContent = '100%'
         await new Promise(r => setTimeout(r, 800))
-        await enter(receivedFiles)
+        await enter(receivedFiles, albumName)
         // enter() calls location.reload() — page ends here
       })
       .onError(err => {

@@ -82,6 +82,7 @@ export class DemoShare {
     this._onComplete = null
     this._onError = null
     this._onFileReceived = null
+    this._receivedAlbumName = 'DEMO'
   }
 
   // ─── Callback setters (chainable) ─────────────────────────
@@ -179,6 +180,7 @@ export class DemoShare {
 
         if (msg.type === 'MANIFEST') {
           totalBytes = msg.files.reduce((s, f) => s + f.size, 0)
+          this._receivedAlbumName = msg.albumName || 'DEMO'
         }
 
         if (msg.type === 'FILE_START') {
@@ -194,7 +196,7 @@ export class DemoShare {
         }
 
         if (msg.type === 'ALL_DONE') {
-          if (this._onComplete) this._onComplete()
+          if (this._onComplete) this._onComplete(this._receivedAlbumName || 'DEMO')
         }
       } else {
         // Binary chunk
@@ -211,7 +213,7 @@ export class DemoShare {
 
   // ─── File transfer (host calls this after peer connects) ──
 
-  async sendTracks(tracks) {
+  async sendTracks(tracks, albumName = 'DEMO') {
     const dc = this._dc
     if (!dc || dc.readyState !== 'open') throw new Error('DataChannel not open')
 
@@ -220,6 +222,7 @@ export class DemoShare {
 
     dc.send(JSON.stringify({
       type: 'MANIFEST',
+      albumName,
       files: tracks.map(t => ({ id: t.id, name: t.name, size: t.size }))
     }))
 

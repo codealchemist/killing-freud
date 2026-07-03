@@ -1593,6 +1593,26 @@ cite {
   margin-bottom: 4px;
 }
 
+.share-modal__album-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 7px 10px;
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--text);
+  transition: border-color var(--transition);
+}
+
+.share-modal__album-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
 .share-modal__code {
   font-family: var(--font-heading);
   font-size: 2rem;

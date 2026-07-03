@@ -103,6 +103,8 @@ const demoBanner = document.getElementById('demoBanner')
 if (DemoMode.isActive() && demoBanner) {
   demoBanner.hidden = false
   document.body.classList.add('demo-mode')
+  const hintEl = document.getElementById('demoBannerHint')
+  if (hintEl) hintEl.textContent = `Listening to ${DemoMode.getAlbumName()}`
   document.getElementById('music')?.scrollTo(0, 0)
   document.getElementById('demoBannerExit')?.addEventListener('click', () => {
     DemoMode.exit()
