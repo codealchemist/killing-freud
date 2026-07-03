@@ -54,10 +54,10 @@
     </div>
 
     <!-- Share modal (host/sender) -->
-    <div class="share-modal" id="shareModal" hidden role="dialog" aria-modal="true" aria-label="Share demo session">
+    <div class="share-modal" id="shareModal" hidden role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
       <div class="share-modal__box">
         <button class="share-modal__close" id="shareModalClose" aria-label="Close">&#x2715;</button>
-        <h2 class="share-modal__title">Share DEMO Session</h2>
+        <h2 class="share-modal__title" id="shareModalTitle">Share DEMO Session</h2>
         <p class="share-modal__code" id="shareCode"></p>
         <canvas id="shareQr" class="share-modal__qr"></canvas>
         <div class="share-modal__url-row">
@@ -75,9 +75,9 @@
     </div>
 
     <!-- Incoming session overlay (receiver) -->
-    <div class="incoming-session" id="incomingSession" hidden role="dialog" aria-modal="true" aria-label="Incoming demo session">
+    <div class="incoming-session" id="incomingSession" hidden role="dialog" aria-modal="true" aria-labelledby="incomingSessionTitle">
       <div class="incoming-session__box">
-        <h2 class="incoming-session__title">Incoming DEMO Session</h2>
+        <h2 class="incoming-session__title" id="incomingSessionTitle">Incoming DEMO Session</h2>
         <p class="incoming-session__code" id="incomingCode"></p>
         <p class="incoming-session__hint">Someone wants to share their audio files with you.</p>
         <div class="incoming-session__actions">

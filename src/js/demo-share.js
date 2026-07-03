@@ -23,11 +23,17 @@ async function postSignal(room, role, payload) {
 
 async function pollSignal(room, role, signal) {
   while (!signal.aborted) {
+    let res
     try {
-      const res = await fetch(`/api/signal?room=${room}&role=${role}`, { signal })
-      if (res.ok) return await res.json()
+      res = await fetch(`/api/signal?room=${room}&role=${role}`, { signal })
     } catch (err) {
       if (err.name === 'AbortError') throw err
+      // network error — wait and retry
+    }
+    if (res) {
+      if (res.ok) return await res.json()
+      if (res.status >= 500) throw new Error(`Signal server error: ${res.status}`)
+      // 404 means not ready yet — fall through to retry
     }
     // Interruptible sleep
     await new Promise((resolve, reject) => {
@@ -163,14 +169,20 @@ export class DemoShare {
 
     dc.addEventListener('message', async e => {
       if (typeof e.data === 'string') {
-        const msg = JSON.parse(e.data)
+        let msg
+        try {
+          msg = JSON.parse(e.data)
+        } catch {
+          if (this._onError) this._onError(new Error('Received malformed message'))
+          return
+        }
 
         if (msg.type === 'MANIFEST') {
           totalBytes = msg.files.reduce((s, f) => s + f.size, 0)
         }
 
         if (msg.type === 'FILE_START') {
-          currentFile = { id: msg.id, name: msg.name, size: msg.size }
+          currentFile = { id: msg.id, name: msg.name, size: msg.size, mimeType: msg.mimeType || '' }
           chunks = []
         }
 
@@ -220,6 +232,7 @@ export class DemoShare {
         id: track.id,
         name: track.name,
         size: track.size,
+        mimeType: track.blob?.type || '',
         totalChunks
       }))
 

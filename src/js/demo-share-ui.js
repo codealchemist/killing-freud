@@ -93,13 +93,16 @@ async function _openShareModal(tracks) {
     modal.hidden = true
     share.destroy()
     copyBtn?.removeEventListener('click', onCopy)
+    document.removeEventListener('keydown', onKeydown)
   }
+  const onKeydown = e => { if (e.key === 'Escape') onClose() }
+  document.addEventListener('keydown', onKeydown)
   closeBtn?.addEventListener('click', onClose, { once: true })
 
   // Also close on backdrop click
   modal.addEventListener('click', e => {
     if (e.target === modal) onClose()
-  }, { once: true })
+  })
 }
 
 // ─── Incoming session overlay (receiver) ──────────────────
@@ -122,8 +125,15 @@ export async function initIncomingSession(roomId) {
   const cleanUrl = `${location.origin}${location.pathname}`
   history.replaceState(null, '', cleanUrl)
 
-  declineBtn?.addEventListener('click', () => {
+  const closeOverlay = () => {
     overlay.hidden = true
+    document.removeEventListener('keydown', onOverlayKeydown)
+  }
+  const onOverlayKeydown = e => { if (e.key === 'Escape') closeOverlay() }
+  document.addEventListener('keydown', onOverlayKeydown)
+
+  declineBtn?.addEventListener('click', () => {
+    closeOverlay()
   }, { once: true })
 
   acceptBtn?.addEventListener('click', async () => {
@@ -136,7 +146,7 @@ export async function initIncomingSession(roomId) {
 
     share
       .onFileReceived((info, blob) => {
-        receivedFiles.push(new File([blob], info.name, { type: 'audio/mpeg' }))
+        receivedFiles.push(new File([blob], info.name, { type: info.mimeType || 'audio/mpeg' }))
       })
       .onProgress((received, total) => {
         progWrap.hidden = false

@@ -48,12 +48,14 @@ export default async function handler(request, context) {
   if (request.method === 'POST') {
     let body
     try {
-      body = await request.json()
+      const text = await request.text()
+      if (text.length > 65536) return respond({ error: 'Payload too large' }, 413)
+      body = JSON.parse(text)
     } catch {
       return respond({ error: 'Invalid JSON' }, 400)
     }
     try {
-      await store.set(key, JSON.stringify(body))
+      await store.set(key, JSON.stringify(body), { ttl: 300 })
       return respond({ ok: true })
     } catch (err) {
       console.error('signal: set failed', err.message)
