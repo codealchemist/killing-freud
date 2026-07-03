@@ -1,6 +1,6 @@
-const CHUNK_SIZE = 64 * 1024       // 64 KB — safe across all browsers
+const CHUNK_SIZE = 64 * 1024 // 64 KB — safe across all browsers
 const MAX_BUFFERED = 2 * 1024 * 1024 // pause sending above 2 MB buffered
-const POLL_INTERVAL = 500            // ms between answer polls
+const POLL_INTERVAL = 1000 // ms between answer polls
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' }
@@ -9,7 +9,9 @@ const ROOM_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // no 0/O/1/I ambiguity
 
 function generateRoomId() {
   const bytes = crypto.getRandomValues(new Uint8Array(6))
-  return Array.from(bytes).map(b => ROOM_CHARS[b % ROOM_CHARS.length]).join('')
+  return Array.from(bytes)
+    .map(b => ROOM_CHARS[b % ROOM_CHARS.length])
+    .join('')
 }
 
 async function postSignal(room, role, payload) {
@@ -32,13 +34,21 @@ async function pollSignal(room, role, signal) {
     }
     if (res) {
       if (res.ok) return await res.json()
-      if (res.status >= 500) throw new Error(`Signal server error: ${res.status}`)
+      if (res.status >= 500)
+        throw new Error(`Signal server error: ${res.status}`)
       // 404 means not ready yet — fall through to retry
     }
     // Interruptible sleep
     await new Promise((resolve, reject) => {
       const t = setTimeout(resolve, POLL_INTERVAL)
-      signal.addEventListener('abort', () => { clearTimeout(t); reject(new DOMException('Aborted', 'AbortError')) }, { once: true })
+      signal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(t)
+          reject(new DOMException('Aborted', 'AbortError'))
+        },
+        { once: true }
+      )
     })
   }
   throw new DOMException('Aborted', 'AbortError')
@@ -47,14 +57,23 @@ async function pollSignal(room, role, signal) {
 async function waitForIceGathering(pc, timeoutMs = 5000) {
   return Promise.race([
     new Promise(resolve => {
-      if (pc.iceGatheringState === 'complete') { resolve(); return }
+      if (pc.iceGatheringState === 'complete') {
+        resolve()
+        return
+      }
 
       function onStateChange() {
-        if (pc.iceGatheringState === 'complete') { cleanup(); resolve() }
+        if (pc.iceGatheringState === 'complete') {
+          cleanup()
+          resolve()
+        }
       }
       // null candidate is the end-of-gathering signal (more reliable in Chrome)
       function onCandidate(e) {
-        if (e.candidate === null) { cleanup(); resolve() }
+        if (e.candidate === null) {
+          cleanup()
+          resolve()
+        }
       }
       function cleanup() {
         pc.removeEventListener('icegatheringstatechange', onStateChange)
@@ -65,7 +84,10 @@ async function waitForIceGathering(pc, timeoutMs = 5000) {
       pc.addEventListener('icecandidate', onCandidate)
 
       // Double-check after adding listeners to close the race window
-      if (pc.iceGatheringState === 'complete') { cleanup(); resolve() }
+      if (pc.iceGatheringState === 'complete') {
+        cleanup()
+        resolve()
+      }
     }),
     // Fallback: proceed with whatever candidates we have after timeout
     new Promise(resolve => setTimeout(resolve, timeoutMs))
@@ -87,11 +109,26 @@ export class DemoShare {
 
   // ─── Callback setters (chainable) ─────────────────────────
 
-  onPeerConnected(cb) { this._onPeerConnected = cb; return this }
-  onProgress(cb)      { this._onProgress = cb; return this }
-  onComplete(cb)      { this._onComplete = cb; return this }
-  onError(cb)         { this._onError = cb; return this }
-  onFileReceived(cb)  { this._onFileReceived = cb; return this }
+  onPeerConnected(cb) {
+    this._onPeerConnected = cb
+    return this
+  }
+  onProgress(cb) {
+    this._onProgress = cb
+    return this
+  }
+  onComplete(cb) {
+    this._onComplete = cb
+    return this
+  }
+  onError(cb) {
+    this._onError = cb
+    return this
+  }
+  onFileReceived(cb) {
+    this._onFileReceived = cb
+    return this
+  }
 
   // ─── Host (sender) ────────────────────────────────────────
 
@@ -107,7 +144,8 @@ export class DemoShare {
       if (this._onPeerConnected) this._onPeerConnected()
     })
     this._dc.addEventListener('error', e => {
-      if (this._onError) this._onError(e.error ?? new Error('DataChannel error'))
+      if (this._onError)
+        this._onError(e.error ?? new Error('DataChannel error'))
     })
 
     const offer = await this._pc.createOffer()
@@ -138,7 +176,10 @@ export class DemoShare {
 
   async joinAsReceiver(roomId) {
     const res = await fetch(`/api/signal?room=${roomId}&role=offer`)
-    if (!res.ok) throw new Error('Session not found or expired — ask the host to share again.')
+    if (!res.ok)
+      throw new Error(
+        'Session not found or expired — ask the host to share again.'
+      )
     const offerData = await res.json()
 
     this._pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
@@ -174,7 +215,8 @@ export class DemoShare {
         try {
           msg = JSON.parse(e.data)
         } catch {
-          if (this._onError) this._onError(new Error('Received malformed message'))
+          if (this._onError)
+            this._onError(new Error('Received malformed message'))
           return
         }
 
@@ -184,7 +226,12 @@ export class DemoShare {
         }
 
         if (msg.type === 'FILE_START') {
-          currentFile = { id: msg.id, name: msg.name, size: msg.size, mimeType: msg.mimeType || '' }
+          currentFile = {
+            id: msg.id,
+            name: msg.name,
+            size: msg.size,
+            mimeType: msg.mimeType || ''
+          }
           chunks = []
         }
 
@@ -196,7 +243,8 @@ export class DemoShare {
         }
 
         if (msg.type === 'ALL_DONE') {
-          if (this._onComplete) this._onComplete(this._receivedAlbumName || 'DEMO')
+          if (this._onComplete)
+            this._onComplete(this._receivedAlbumName || 'DEMO')
         }
       } else {
         // Binary chunk
@@ -207,7 +255,8 @@ export class DemoShare {
     })
 
     dc.addEventListener('error', e => {
-      if (this._onError) this._onError(e.error ?? new Error('DataChannel error'))
+      if (this._onError)
+        this._onError(e.error ?? new Error('DataChannel error'))
     })
   }
 
@@ -220,24 +269,28 @@ export class DemoShare {
     const totalBytes = tracks.reduce((s, t) => s + (t.size || 0), 0)
     let sentBytes = 0
 
-    dc.send(JSON.stringify({
-      type: 'MANIFEST',
-      albumName,
-      files: tracks.map(t => ({ id: t.id, name: t.name, size: t.size }))
-    }))
+    dc.send(
+      JSON.stringify({
+        type: 'MANIFEST',
+        albumName,
+        files: tracks.map(t => ({ id: t.id, name: t.name, size: t.size }))
+      })
+    )
 
     for (const track of tracks) {
       const buffer = await track.blob.arrayBuffer()
       const totalChunks = Math.ceil(buffer.byteLength / CHUNK_SIZE)
 
-      dc.send(JSON.stringify({
-        type: 'FILE_START',
-        id: track.id,
-        name: track.name,
-        size: track.size,
-        mimeType: track.blob?.type || '',
-        totalChunks
-      }))
+      dc.send(
+        JSON.stringify({
+          type: 'FILE_START',
+          id: track.id,
+          name: track.name,
+          size: track.size,
+          mimeType: track.blob?.type || '',
+          totalChunks
+        })
+      )
 
       for (let i = 0; i < totalChunks; i++) {
         // Backpressure: wait while the send buffer is too full
@@ -262,7 +315,15 @@ export class DemoShare {
 
   destroy() {
     this._abort.abort()
-    try { this._dc?.close() } catch { /* ignore */ }
-    try { this._pc?.close() } catch { /* ignore */ }
+    try {
+      this._dc?.close()
+    } catch {
+      /* ignore */
+    }
+    try {
+      this._pc?.close()
+    } catch {
+      /* ignore */
+    }
   }
 }
