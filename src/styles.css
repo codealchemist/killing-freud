@@ -1593,6 +1593,18 @@ cite {
   margin-bottom: 4px;
 }
 
+.share-modal__step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.share-modal__continue {
+  width: 100%;
+}
+
 .share-modal__album-input {
   width: 100%;
   background: var(--surface-2);

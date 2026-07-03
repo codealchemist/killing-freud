@@ -58,19 +58,28 @@
       <div class="share-modal__box">
         <button class="share-modal__close" id="shareModalClose" aria-label="Close">&#x2715;</button>
         <h2 class="share-modal__title" id="shareModalTitle">Share DEMO Session</h2>
-        <input class="share-modal__album-input" id="shareAlbumName" type="text" value="DEMO" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Album name">
-        <p class="share-modal__code" id="shareCode"></p>
-        <canvas id="shareQr" class="share-modal__qr"></canvas>
-        <div class="share-modal__url-row">
-          <span class="share-modal__url" id="shareUrl"></span>
-          <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
+
+        <!-- Step 1: choose album name -->
+        <div class="share-modal__step" id="shareStep1">
+          <input class="share-modal__album-input" id="shareAlbumName" type="text" value="DEMO" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Album name">
+          <button class="btn btn--primary share-modal__continue" id="shareContinueBtn">Continue</button>
         </div>
-        <p class="share-modal__status" id="shareStatus"></p>
-        <div class="share-modal__progress" id="shareProgressWrap" hidden>
-          <div class="share-modal__bar">
-            <div class="share-modal__fill" id="shareProgressFill"></div>
+
+        <!-- Step 2: QR + connection (shown after Continue) -->
+        <div class="share-modal__step" id="shareStep2" hidden>
+          <p class="share-modal__code" id="shareCode"></p>
+          <canvas id="shareQr" class="share-modal__qr"></canvas>
+          <div class="share-modal__url-row">
+            <span class="share-modal__url" id="shareUrl"></span>
+            <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
           </div>
-          <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+          <p class="share-modal__status" id="shareStatus"></p>
+          <div class="share-modal__progress" id="shareProgressWrap" hidden>
+            <div class="share-modal__bar">
+              <div class="share-modal__fill" id="shareProgressFill"></div>
+            </div>
+            <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+          </div>
         </div>
       </div>
     </div>

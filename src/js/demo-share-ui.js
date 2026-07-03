@@ -17,38 +17,41 @@ export function initShareButton(tracks) {
 // ─── Share modal (host/sender) ────────────────────────────
 
 async function _openShareModal(tracks) {
-  const modal   = document.getElementById('shareModal')
-  const canvas  = document.getElementById('shareQr')
-  const codeEl  = document.getElementById('shareCode')
-  const urlEl   = document.getElementById('shareUrl')
-  const status  = document.getElementById('shareStatus')
-  const progWrap = document.getElementById('shareProgressWrap')
-  const progFill = document.getElementById('shareProgressFill')
-  const progLabel = document.getElementById('shareProgressLabel')
-  const albumInput = document.getElementById('shareAlbumName')
-  const copyBtn  = document.getElementById('shareCopyBtn')
-  const closeBtn = document.getElementById('shareModalClose')
+  const modal       = document.getElementById('shareModal')
+  const step1       = document.getElementById('shareStep1')
+  const step2       = document.getElementById('shareStep2')
+  const canvas      = document.getElementById('shareQr')
+  const codeEl      = document.getElementById('shareCode')
+  const urlEl       = document.getElementById('shareUrl')
+  const status      = document.getElementById('shareStatus')
+  const progWrap    = document.getElementById('shareProgressWrap')
+  const progFill    = document.getElementById('shareProgressFill')
+  const progLabel   = document.getElementById('shareProgressLabel')
+  const albumInput  = document.getElementById('shareAlbumName')
+  const continueBtn = document.getElementById('shareContinueBtn')
+  const copyBtn     = document.getElementById('shareCopyBtn')
+  const closeBtn    = document.getElementById('shareModalClose')
 
   if (!modal) return
 
-  // Reset UI
+  // Reset to step 1
+  step1.hidden = false
+  step2.hidden = true
   progWrap.hidden = true
   progFill.style.width = '0%'
   progLabel.textContent = '0%'
   urlEl.textContent = ''
-  status.textContent = 'Creating session…'
   modal.hidden = false
+  albumInput?.focus()
+  albumInput?.select()
 
   const share = new DemoShare()
   let shareUrl = ''
-  let _liveRoomId = null
-  let _qrDebounce = null
+  let albumName = ''
 
   let _sendRafId = null
   let _sendRafPct = 0
 
-  // Wire up all modal controls immediately so the modal is fully interactive
-  // while ICE gathering runs in the background (can take 1–5 s).
   const onCopy = async () => {
     if (!shareUrl) return
     try {
@@ -66,34 +69,22 @@ async function _openShareModal(tracks) {
     modal.hidden = true
     share.destroy()
     cancelAnimationFrame(_sendRafId)
-    clearTimeout(_qrDebounce)
-    albumInput?.removeEventListener('input', onAlbumInput)
+    albumInput?.removeEventListener('keydown', onAlbumKeydown)
     copyBtn?.removeEventListener('click', onCopy)
     document.removeEventListener('keydown', onKeydown)
     modal.removeEventListener('click', onBackdropClick)
   }
-
-  // Keep URL and QR in sync with the album input while the user is still typing.
-  const onAlbumInput = () => {
-    if (!_liveRoomId) return
-    const name = (albumInput.value.trim() || 'DEMO').toUpperCase()
-    shareUrl = `${location.origin}${location.pathname}?demo-share=${_liveRoomId}&album=${encodeURIComponent(name)}`
-    if (urlEl) urlEl.textContent = shareUrl
-    clearTimeout(_qrDebounce)
-    _qrDebounce = setTimeout(() => renderQR(canvas, shareUrl).catch(() => {}), 400)
-  }
-  albumInput?.addEventListener('input', onAlbumInput)
+  // Enter in album input advances to Continue
+  const onAlbumKeydown = e => { if (e.key === 'Enter') { e.preventDefault(); continueBtn?.click() } }
   const onKeydown = e => { if (e.key === 'Escape') onClose() }
   const onBackdropClick = e => { if (e.target === modal) onClose() }
+  albumInput?.addEventListener('keydown', onAlbumKeydown)
   document.addEventListener('keydown', onKeydown)
   closeBtn?.addEventListener('click', onClose, { once: true })
   modal.addEventListener('click', onBackdropClick)
 
   share
     .onPeerConnected(async () => {
-      // Read the album name at connect time so the user can edit it up until
-      // the moment a peer actually arrives.
-      const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
       status.textContent = 'Peer connected — sending files…'
       try {
         await share.sendTracks(tracks, albumName)
@@ -122,23 +113,26 @@ async function _openShareModal(tracks) {
       status.textContent = `Error: ${err?.message ?? 'Unknown error'}`
     })
 
-  try {
-    const { roomId } = await share.startAsHost()
+  // Continue: lock album name, switch to step 2, then start WebRTC session.
+  // startAsHost() is intentionally deferred to here so the offer blob is only
+  // written to the signal store once the album name is final.
+  continueBtn?.addEventListener('click', async () => {
+    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
+    step1.hidden = true
+    step2.hidden = false
+    status.textContent = 'Creating session…'
 
-    // Make the room ID available so onAlbumInput can regenerate the URL/QR
-    // if the user edits the album name after this point.
-    _liveRoomId = roomId
-    if (codeEl) codeEl.textContent = roomId
-
-    // Build initial URL and QR using whatever is in the input right now.
-    const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
-    shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
-    await renderQR(canvas, shareUrl)
-    urlEl.textContent = shareUrl
-    status.textContent = 'Waiting for someone to scan…'
-  } catch (err) {
-    status.textContent = `Failed to start session: ${err.message}`
-  }
+    try {
+      const { roomId } = await share.startAsHost()
+      shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
+      if (codeEl) codeEl.textContent = roomId
+      await renderQR(canvas, shareUrl)
+      urlEl.textContent = shareUrl
+      status.textContent = 'Waiting for someone to scan…'
+    } catch (err) {
+      status.textContent = `Failed to start session: ${err.message}`
+    }
+  }, { once: true })
 }
 
 // ─── Incoming session overlay (receiver) ──────────────────
