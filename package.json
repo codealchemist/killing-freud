@@ -25,6 +25,8 @@
     "deploy": "npm run build && netlify deploy --prod"
   },
   "devDependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "qrcode": "^1.5.4",
     "vite": "^6.0.0",
     "netlify-cli": "^17.0.0"
   }

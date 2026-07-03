@@ -5,6 +5,7 @@ import { initSharing } from './sharing.js'
 import { version } from '../../package.json'
 import * as DemoMode from './demo-mode.js'
 import { initDropZone } from './drop-zone.js'
+import { initShareButton, initIncomingSession } from './demo-share-ui.js'
 
 // ─── Service Worker (PWA + offline) ───────────────────────
 if ('serviceWorker' in navigator) {
@@ -108,10 +109,17 @@ if (DemoMode.isActive() && demoBanner) {
   })
 }
 
+// ─── Incoming share session (detected on any page load) ───
+const shareParam = new URLSearchParams(location.search).get('demo-share')
+if (shareParam) initIncomingSession(shareParam)
+
 // ─── Audio Player ──────────────────────────────────────────
 const player = new AudioPlayer()
 if (DemoMode.isActive()) {
-  DemoMode.getTracks().then(tracks => player.init(tracks))
+  DemoMode.getTracks().then(tracks => {
+    player.init(tracks)
+    initShareButton(tracks)
+  })
 } else {
   player.init()
 }
