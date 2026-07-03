@@ -38,6 +38,7 @@ export class AudioPlayer {
     this._currentObjectURL = null
     this._cachedMap = new Map()
     this._downloading = new Set()
+    this._isDemo = false
 
     this.btnPlay = document.getElementById('btnPlay')
     this.btnPrev = document.getElementById('btnPrev')
@@ -60,9 +61,21 @@ export class AudioPlayer {
     this._bindEvents()
   }
 
-  async init() {
+  async init(demoTracks = null) {
     this._showLoading(true)
     this._showError(false)
+
+    if (demoTracks) {
+      this._isDemo = true
+      this.tracks = demoTracks
+      this._renderTracklist()
+      if (this.offlineControlsEl) this.offlineControlsEl.hidden = true
+      this._showLoading(false)
+      this.tracklistEl.addEventListener('click', e => {
+        if (e.target.closest('.tracklist__offline-btn')) e.stopPropagation()
+      })
+      return
+    }
 
     try {
       const res = await fetch('/api/tracks')
@@ -298,7 +311,7 @@ export class AudioPlayer {
       this._currentObjectURL = null
     }
 
-    const blob = track._cacheKey ? await getTrackBlob(track._cacheKey) : null
+    const blob = track.blob ?? (track._cacheKey ? await getTrackBlob(track._cacheKey) : null)
     if (blob) {
       this._currentObjectURL = URL.createObjectURL(blob)
       this.audio.src = this._currentObjectURL
@@ -335,14 +348,18 @@ export class AudioPlayer {
       const { icon, label } = offlineBtnAttrs(track.offlineState)
       const item = document.createElement('div')
       item.className = 'tracklist__item'
+      if (this._isDemo) item.classList.add('is-demo')
       if (track.offlineState === 'offline-only')
         item.classList.add('is-offline-only')
       item.dataset.index = i
+      const offlineBtn = this._isDemo
+        ? ''
+        : `<button class="tracklist__offline-btn" data-index="${i}" data-state="${track.offlineState}" aria-label="${label}" title="${label}">${icon}</button>`
       item.innerHTML = `
         <span class="tracklist__num">${i + 1}</span>
         <span class="tracklist__name">${cleanName(track.name)}</span>
         <span class="tracklist__size">${formatSize(track.size)}</span>
-        <button class="tracklist__offline-btn" data-index="${i}" data-state="${track.offlineState}" aria-label="${label}" title="${label}">${icon}</button>
+        ${offlineBtn}
       `
       item.addEventListener('click', e => {
         if (e.target.closest('.tracklist__offline-btn')) return
