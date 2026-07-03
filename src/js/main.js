@@ -103,8 +103,11 @@ const demoBanner = document.getElementById('demoBanner')
 if (DemoMode.isActive() && demoBanner) {
   demoBanner.hidden = false
   document.body.classList.add('demo-mode')
+  const albumName = DemoMode.getAlbumName()
   const hintEl = document.getElementById('demoBannerHint')
-  if (hintEl) hintEl.textContent = `Listening to ${DemoMode.getAlbumName()}`
+  if (hintEl) hintEl.textContent = `Listening to ${albumName}`
+  const musicTitleEl = document.getElementById('musicSectionTitle')
+  if (musicTitleEl) musicTitleEl.textContent = albumName
   document.getElementById('music')?.scrollTo(0, 0)
   document.getElementById('demoBannerExit')?.addEventListener('click', () => {
     DemoMode.exit()
@@ -112,8 +115,14 @@ if (DemoMode.isActive() && demoBanner) {
 }
 
 // ─── Incoming share session (detected on any page load) ───
-const shareParam = new URLSearchParams(location.search).get('demo-share')
-if (shareParam) initIncomingSession(shareParam)
+const _qs = new URLSearchParams(location.search)
+const shareParam = _qs.get('demo-share')
+if (shareParam) {
+  // Strip control characters and cap length; textContent handles the rest
+  const rawAlbum = _qs.get('album') ?? ''
+  const albumParam = rawAlbum.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 50)
+  initIncomingSession(shareParam, albumParam || undefined)
+}
 
 // ─── Audio Player ──────────────────────────────────────────
 const player = new AudioPlayer()

@@ -41,6 +41,7 @@ async function _openShareModal(tracks) {
 
   const share = new DemoShare()
   let shareUrl = ''
+  let albumName = ''
 
   let _sendRafId = null
   let _sendRafPct = 0
@@ -48,7 +49,6 @@ async function _openShareModal(tracks) {
   share
     .onPeerConnected(async () => {
       status.textContent = 'Peer connected — sending files…'
-      const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
       try {
         await share.sendTracks(tracks, albumName)
       } catch (err) {
@@ -77,8 +77,13 @@ async function _openShareModal(tracks) {
     })
 
   try {
-    const { roomId, shareUrl: url } = await share.startAsHost()
-    shareUrl = url
+    const { roomId } = await share.startAsHost()
+
+    // Snapshot the album name once ICE is complete and the QR is about to render,
+    // then lock the input so URL and MANIFEST stay in sync.
+    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
+    if (albumInput) albumInput.disabled = true
+    shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
 
     if (codeEl) codeEl.textContent = roomId
     await renderQR(canvas, shareUrl)
@@ -107,6 +112,7 @@ async function _openShareModal(tracks) {
     modal.hidden = true
     share.destroy()
     cancelAnimationFrame(_sendRafId)
+    if (albumInput) albumInput.disabled = false
     copyBtn?.removeEventListener('click', onCopy)
     document.removeEventListener('keydown', onKeydown)
     modal.removeEventListener('click', onBackdropClick)
@@ -120,9 +126,10 @@ async function _openShareModal(tracks) {
 
 // ─── Incoming session overlay (receiver) ──────────────────
 
-export async function initIncomingSession(roomId) {
+export async function initIncomingSession(roomId, albumName) {
   const overlay    = document.getElementById('incomingSession')
   const codeEl     = document.getElementById('incomingCode')
+  const albumEl    = document.getElementById('incomingAlbum')
   const acceptBtn  = document.getElementById('incomingAccept')
   const declineBtn = document.getElementById('incomingDecline')
   const status     = document.getElementById('incomingStatus')
@@ -133,6 +140,10 @@ export async function initIncomingSession(roomId) {
   if (!overlay) return
   overlay.hidden = false
   if (codeEl) codeEl.textContent = roomId
+  if (albumEl && albumName) {
+    albumEl.textContent = albumName
+    albumEl.hidden = false
+  }
 
   // Clean the URL so a reload after entering demo mode won't retrigger
   const cleanUrl = `${location.origin}${location.pathname}`
