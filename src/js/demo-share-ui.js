@@ -41,13 +41,44 @@ async function _openShareModal(tracks) {
 
   const share = new DemoShare()
   let shareUrl = ''
-  let albumName = ''
 
   let _sendRafId = null
   let _sendRafPct = 0
 
+  // Wire up all modal controls immediately so the modal is fully interactive
+  // while ICE gathering runs in the background (can take 1–5 s).
+  const onCopy = async () => {
+    if (!shareUrl) return
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      copyBtn.textContent = 'Copied!'
+      setTimeout(() => { copyBtn.textContent = 'Copy' }, 2000)
+    } catch {
+      copyBtn.textContent = 'Copy failed'
+      setTimeout(() => { copyBtn.textContent = 'Copy' }, 2000)
+    }
+  }
+  copyBtn?.addEventListener('click', onCopy)
+
+  const onClose = () => {
+    modal.hidden = true
+    share.destroy()
+    cancelAnimationFrame(_sendRafId)
+    copyBtn?.removeEventListener('click', onCopy)
+    document.removeEventListener('keydown', onKeydown)
+    modal.removeEventListener('click', onBackdropClick)
+  }
+  const onKeydown = e => { if (e.key === 'Escape') onClose() }
+  const onBackdropClick = e => { if (e.target === modal) onClose() }
+  document.addEventListener('keydown', onKeydown)
+  closeBtn?.addEventListener('click', onClose, { once: true })
+  modal.addEventListener('click', onBackdropClick)
+
   share
     .onPeerConnected(async () => {
+      // Read the album name at connect time so the user can edit it up until
+      // the moment a peer actually arrives.
+      const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
       status.textContent = 'Peer connected — sending files…'
       try {
         await share.sendTracks(tracks, albumName)
@@ -79,10 +110,9 @@ async function _openShareModal(tracks) {
   try {
     const { roomId } = await share.startAsHost()
 
-    // Snapshot the album name once ICE is complete and the QR is about to render,
-    // then lock the input so URL and MANIFEST stay in sync.
-    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
-    if (albumInput) albumInput.disabled = true
+    // Snapshot album name for the URL/QR at the moment ICE completes.
+    // The user can still edit it; onPeerConnected will read the live value.
+    const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
     shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
 
     if (codeEl) codeEl.textContent = roomId
@@ -92,36 +122,6 @@ async function _openShareModal(tracks) {
   } catch (err) {
     status.textContent = `Failed to start session: ${err.message}`
   }
-
-  // Copy URL
-  const onCopy = async () => {
-    if (!shareUrl) return
-    try {
-      await navigator.clipboard.writeText(shareUrl)
-      copyBtn.textContent = 'Copied!'
-      setTimeout(() => { copyBtn.textContent = 'Copy' }, 2000)
-    } catch {
-      copyBtn.textContent = 'Copy failed'
-      setTimeout(() => { copyBtn.textContent = 'Copy' }, 2000)
-    }
-  }
-  copyBtn?.addEventListener('click', onCopy, { once: false })
-
-  // Close modal
-  const onClose = () => {
-    modal.hidden = true
-    share.destroy()
-    cancelAnimationFrame(_sendRafId)
-    if (albumInput) albumInput.disabled = false
-    copyBtn?.removeEventListener('click', onCopy)
-    document.removeEventListener('keydown', onKeydown)
-    modal.removeEventListener('click', onBackdropClick)
-  }
-  const onKeydown = e => { if (e.key === 'Escape') onClose() }
-  const onBackdropClick = e => { if (e.target === modal) onClose() }
-  document.addEventListener('keydown', onKeydown)
-  closeBtn?.addEventListener('click', onClose, { once: true })
-  modal.addEventListener('click', onBackdropClick)
 }
 
 // ─── Incoming session overlay (receiver) ──────────────────
