@@ -62,6 +62,12 @@
         <!-- Step 1: choose album name -->
         <div class="share-modal__step" id="shareStep1">
           <input class="share-modal__album-input" id="shareAlbumName" type="text" value="DEMO" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Album name">
+          <label class="share-modal__art-drop" id="shareArtDrop" aria-label="Add album art">
+            <input type="file" id="shareArtInput" accept="image/jpeg,image/png,image/webp" hidden aria-hidden="true">
+            <span class="share-modal__art-hint" id="shareArtHint">Album art</span>
+            <img class="share-modal__art-preview" id="shareArtPreview" hidden alt="">
+          </label>
+          <p class="share-modal__art-error" id="shareArtError" hidden></p>
           <button class="btn btn--primary share-modal__continue" id="shareContinueBtn">Continue</button>
         </div>
 
