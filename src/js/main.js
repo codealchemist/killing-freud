@@ -3,6 +3,8 @@ import { initGallery } from './gallery.js'
 import { initLyrics } from './lyrics.js'
 import { initSharing } from './sharing.js'
 import { version } from '../../package.json'
+import * as DemoMode from './demo-mode.js'
+import { initDropZone } from './drop-zone.js'
 
 // ─── Service Worker (PWA + offline) ───────────────────────
 if ('serviceWorker' in navigator) {
@@ -92,9 +94,27 @@ if (yearEl) yearEl.textContent = new Date().getFullYear()
 const versionEl = document.getElementById('footerVersion')
 if (versionEl) versionEl.textContent = `v${version}`
 
+// ─── Drop zone (always active) ────────────────────────────
+initDropZone()
+
+// ─── Demo mode banner ─────────────────────────────────────
+const demoBanner = document.getElementById('demoBanner')
+if (DemoMode.isActive() && demoBanner) {
+  demoBanner.hidden = false
+  document.body.classList.add('demo-mode')
+  document.getElementById('music')?.scrollTo(0, 0)
+  document.getElementById('demoBannerExit')?.addEventListener('click', () => {
+    DemoMode.exit()
+  })
+}
+
 // ─── Audio Player ──────────────────────────────────────────
 const player = new AudioPlayer()
-player.init()
+if (DemoMode.isActive()) {
+  DemoMode.getTracks().then(tracks => player.init(tracks))
+} else {
+  player.init()
+}
 
 // ─── Gallery ───────────────────────────────────────────────
 initGallery()
