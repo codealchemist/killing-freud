@@ -16,6 +16,7 @@ export function initShareButton(tracks) {
 async function _openShareModal(tracks) {
   const modal   = document.getElementById('shareModal')
   const canvas  = document.getElementById('shareQr')
+  const codeEl  = document.getElementById('shareCode')
   const urlEl   = document.getElementById('shareUrl')
   const status  = document.getElementById('shareStatus')
   const progWrap = document.getElementById('shareProgressWrap')
@@ -65,6 +66,7 @@ async function _openShareModal(tracks) {
     const result = await share.startAsHost()
     shareUrl = result.shareUrl
 
+    if (codeEl) codeEl.textContent = roomId
     await renderQR(canvas, shareUrl)
     urlEl.textContent = shareUrl
     status.textContent = 'Waiting for someone to scan…'

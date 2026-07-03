@@ -63,9 +63,9 @@ export default async function handler(request, context) {
 
   if (request.method === 'GET') {
     try {
-      // Retrieve as plain text and parse manually — avoids any edge cases
-      // with the { type: 'json' } option across Blobs versions
-      const raw = await store.get(key)
+      // Strong consistency ensures a write is visible immediately on read,
+      // which matters when sender and receiver hit different edge nodes.
+      const raw = await store.get(key, { consistency: 'strong' })
       if (raw == null)
         return respond({ error: 'Not found' }, 404)
 
