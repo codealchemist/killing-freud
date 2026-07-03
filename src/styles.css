@@ -110,7 +110,7 @@ input[type='range'] {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  margin-bottom: 12px;
+  margin-bottom: 48px;
   position: relative;
   text-shadow:
     2px 2px 0 rgba(0, 0, 0, 0.8),
@@ -406,6 +406,39 @@ input[type='range'] {
   background: var(--bg);
 }
 
+/* ── Music section header (title + optional album art) ── */
+.music-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.music-header .section-title {
+  margin-bottom: 10px;
+}
+
+.music-header .section-subtitle {
+  margin-bottom: 0;
+}
+
+.music-header__art {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border-radius: 2px;
+  display: block;
+  align-self: flex-start;
+}
+
+@media (max-width: 640px) {
+  .music-header__art {
+    display: none;
+  }
+}
+
 .player {
   background: var(--surface);
   border: 1px solid rgba(122, 138, 138, 0.15);
@@ -445,6 +478,15 @@ input[type='range'] {
 
   .player__volume {
     grid-column: 1 / -1;
+  }
+
+  /* Album art as player background on mobile */
+  .player.has-art {
+    background-image:
+      linear-gradient(rgba(8, 8, 8, 0.80), rgba(8, 8, 8, 0.80)),
+      var(--player-art);
+    background-size: cover;
+    background-position: center;
   }
 }
 

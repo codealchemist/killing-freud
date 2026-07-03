@@ -108,6 +108,18 @@ if (DemoMode.isActive() && demoBanner) {
   if (hintEl) hintEl.textContent = `Listening to ${albumName}`
   const musicTitleEl = document.getElementById('musicSectionTitle')
   if (musicTitleEl) musicTitleEl.textContent = albumName
+
+  const albumArt = DemoMode.getAlbumArt()
+  if (albumArt) {
+    const artImg = document.getElementById('musicAlbumArt')
+    if (artImg) { artImg.src = albumArt; artImg.hidden = false }
+    const playerEl = document.querySelector('.player')
+    if (playerEl) {
+      playerEl.style.setProperty('--player-art', `url("${albumArt}")`)
+      playerEl.classList.add('has-art')
+    }
+  }
+
   document.getElementById('music')?.scrollTo(0, 0)
   document.getElementById('demoBannerExit')?.addEventListener('click', () => {
     DemoMode.exit()
