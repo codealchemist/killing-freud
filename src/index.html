@@ -68,18 +68,28 @@
         <!-- Step 2: QR + connection (shown after Continue) -->
         <div class="share-modal__step" id="shareStep2" hidden>
           <p class="share-modal__album-name" id="shareStep2AlbumName"></p>
-          <p class="share-modal__code" id="shareCode"></p>
-          <canvas id="shareQr" class="share-modal__qr"></canvas>
-          <div class="share-modal__url-row">
-            <span class="share-modal__url" id="shareUrl"></span>
-            <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
-          </div>
-          <p class="share-modal__status" id="shareStatus"></p>
-          <div class="share-modal__progress" id="shareProgressWrap" hidden>
-            <div class="share-modal__bar">
-              <div class="share-modal__fill" id="shareProgressFill"></div>
+
+          <!-- Active session: room code, QR, URL, status, progress -->
+          <div class="share-modal__step" id="shareSessionState">
+            <p class="share-modal__code" id="shareCode"></p>
+            <canvas id="shareQr" class="share-modal__qr"></canvas>
+            <div class="share-modal__url-row">
+              <span class="share-modal__url" id="shareUrl"></span>
+              <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
             </div>
-            <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+            <p class="share-modal__status" id="shareStatus"></p>
+            <div class="share-modal__progress" id="shareProgressWrap" hidden>
+              <div class="share-modal__bar">
+                <div class="share-modal__fill" id="shareProgressFill"></div>
+              </div>
+              <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+            </div>
+          </div>
+
+          <!-- Completion: peer count + share again -->
+          <div class="share-modal__step" id="shareCompleteState" hidden>
+            <p class="share-modal__shared-count" id="shareSharedCount"></p>
+            <button class="btn btn--primary share-modal__continue" id="shareAgainBtn">Share again</button>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { DemoShare } from './demo-share.js'
 import { renderQR } from './qr.js'
-import { enter } from './demo-mode.js'
+import { enter, isReceived, getAlbumName } from './demo-mode.js'
 
 // ─── Share button (shown in demo banner) ──────────────────
 
@@ -17,39 +17,49 @@ export function initShareButton(tracks) {
 // ─── Share modal (host/sender) ────────────────────────────
 
 async function _openShareModal(tracks) {
-  const modal       = document.getElementById('shareModal')
-  const step1       = document.getElementById('shareStep1')
-  const step2       = document.getElementById('shareStep2')
-  const canvas      = document.getElementById('shareQr')
-  const codeEl      = document.getElementById('shareCode')
-  const urlEl       = document.getElementById('shareUrl')
-  const status      = document.getElementById('shareStatus')
-  const progWrap    = document.getElementById('shareProgressWrap')
-  const progFill    = document.getElementById('shareProgressFill')
-  const progLabel   = document.getElementById('shareProgressLabel')
-  const albumInput  = document.getElementById('shareAlbumName')
-  const continueBtn    = document.getElementById('shareContinueBtn')
-  const albumNameEl    = document.getElementById('shareStep2AlbumName')
-  const copyBtn        = document.getElementById('shareCopyBtn')
-  const closeBtn    = document.getElementById('shareModalClose')
+  const modal            = document.getElementById('shareModal')
+  const step1            = document.getElementById('shareStep1')
+  const step2            = document.getElementById('shareStep2')
+  const sessionStateEl   = document.getElementById('shareSessionState')
+  const completeStateEl  = document.getElementById('shareCompleteState')
+  const canvas           = document.getElementById('shareQr')
+  const codeEl           = document.getElementById('shareCode')
+  const urlEl            = document.getElementById('shareUrl')
+  const status           = document.getElementById('shareStatus')
+  const progWrap         = document.getElementById('shareProgressWrap')
+  const progFill         = document.getElementById('shareProgressFill')
+  const progLabel        = document.getElementById('shareProgressLabel')
+  const albumInput       = document.getElementById('shareAlbumName')
+  const albumNameEl      = document.getElementById('shareStep2AlbumName')
+  const sharedCountEl    = document.getElementById('shareSharedCount')
+  const continueBtn      = document.getElementById('shareContinueBtn')
+  const shareAgainBtn    = document.getElementById('shareAgainBtn')
+  const copyBtn          = document.getElementById('shareCopyBtn')
+  const closeBtn         = document.getElementById('shareModalClose')
 
   if (!modal) return
+
+  // Received albums cannot be renamed — lock the input and pre-fill the name.
+  if (isReceived()) {
+    albumInput.value = getAlbumName()
+    albumInput.disabled = true
+  } else {
+    albumInput.disabled = false
+  }
 
   // Reset to step 1
   step1.hidden = false
   step2.hidden = true
-  progWrap.hidden = true
-  progFill.style.width = '0%'
-  progLabel.textContent = '0%'
-  urlEl.textContent = ''
   modal.hidden = false
-  albumInput?.focus()
-  albumInput?.select()
+  if (!albumInput.disabled) {
+    albumInput.focus()
+    albumInput.select()
+  }
 
-  const share = new DemoShare()
-  let shareUrl = ''
   let albumName = ''
-
+  let shareUrl = ''
+  let sharedCount = 0
+  let currentShare = null
   let _sendRafId = null
   let _sendRafPct = 0
 
@@ -68,14 +78,14 @@ async function _openShareModal(tracks) {
 
   const onClose = () => {
     modal.hidden = true
-    share.destroy()
+    currentShare?.destroy()
     cancelAnimationFrame(_sendRafId)
     albumInput?.removeEventListener('keydown', onAlbumKeydown)
     copyBtn?.removeEventListener('click', onCopy)
+    shareAgainBtn?.removeEventListener('click', onShareAgain)
     document.removeEventListener('keydown', onKeydown)
     modal.removeEventListener('click', onBackdropClick)
   }
-  // Enter in album input advances to Continue
   const onAlbumKeydown = e => { if (e.key === 'Enter') { e.preventDefault(); continueBtn?.click() } }
   const onKeydown = e => { if (e.key === 'Escape') onClose() }
   const onBackdropClick = e => { if (e.target === modal) onClose() }
@@ -84,45 +94,52 @@ async function _openShareModal(tracks) {
   closeBtn?.addEventListener('click', onClose, { once: true })
   modal.addEventListener('click', onBackdropClick)
 
-  share
-    .onPeerConnected(async () => {
-      status.textContent = 'Peer connected — sending files…'
-      try {
-        await share.sendTracks(tracks, albumName)
-      } catch (err) {
-        status.textContent = `Transfer failed: ${err.message}`
-      }
-    })
-    .onProgress((sent, total) => {
-      progWrap.hidden = false
-      _sendRafPct = total ? Math.round((sent / total) * 100) : 0
-      if (_sendRafId) return
-      _sendRafId = requestAnimationFrame(() => {
-        _sendRafId = null
-        progFill.style.width = `${_sendRafPct}%`
-        progLabel.textContent = `${_sendRafPct}%`
-      })
-    })
-    .onComplete(() => {
-      cancelAnimationFrame(_sendRafId)
-      _sendRafId = null
-      status.textContent = 'Transfer complete ✓'
-      progFill.style.width = '100%'
-      progLabel.textContent = '100%'
-    })
-    .onError(err => {
-      status.textContent = `Error: ${err?.message ?? 'Unknown error'}`
-    })
+  // startSession creates a fresh WebRTC session using the already-confirmed
+  // albumName. Called once by Continue and again by "Share again".
+  const startSession = async () => {
+    cancelAnimationFrame(_sendRafId)
+    _sendRafId = null
+    currentShare?.destroy()
+    currentShare = new DemoShare()
+    const share = currentShare
 
-  // Continue: lock album name, switch to step 2, then start WebRTC session.
-  // startAsHost() is intentionally deferred to here so the offer blob is only
-  // written to the signal store once the album name is final.
-  continueBtn?.addEventListener('click', async () => {
-    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
-    if (albumNameEl) albumNameEl.textContent = albumName
-    step1.hidden = true
-    step2.hidden = false
+    // Reset session UI
+    sessionStateEl.hidden = false
+    completeStateEl.hidden = true
+    progWrap.hidden = true
+    progFill.style.width = '0%'
+    progLabel.textContent = '0%'
+    urlEl.textContent = ''
     status.textContent = 'Creating session…'
+
+    share
+      .onPeerConnected(async () => {
+        status.textContent = 'Peer connected — sending files…'
+        try {
+          await share.sendTracks(tracks, albumName)
+          sharedCount++
+          const n = sharedCount
+          sharedCountEl.textContent =
+            n === 1 ? 'Shared with 1 peer' : `Shared with ${n} peers`
+          sessionStateEl.hidden = true
+          completeStateEl.hidden = false
+        } catch (err) {
+          status.textContent = `Transfer failed: ${err.message}`
+        }
+      })
+      .onProgress((sent, total) => {
+        progWrap.hidden = false
+        _sendRafPct = total ? Math.round((sent / total) * 100) : 0
+        if (_sendRafId) return
+        _sendRafId = requestAnimationFrame(() => {
+          _sendRafId = null
+          progFill.style.width = `${_sendRafPct}%`
+          progLabel.textContent = `${_sendRafPct}%`
+        })
+      })
+      .onError(err => {
+        status.textContent = `Error: ${err?.message ?? 'Unknown error'}`
+      })
 
     try {
       const { roomId } = await share.startAsHost()
@@ -134,6 +151,18 @@ async function _openShareModal(tracks) {
     } catch (err) {
       status.textContent = `Failed to start session: ${err.message}`
     }
+  }
+
+  const onShareAgain = () => startSession()
+  shareAgainBtn?.addEventListener('click', onShareAgain)
+
+  // Continue: finalise album name, show step 2, kick off first session.
+  continueBtn?.addEventListener('click', async () => {
+    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
+    if (albumNameEl) albumNameEl.textContent = albumName
+    step1.hidden = true
+    step2.hidden = false
+    await startSession()
   }, { once: true })
 }
 
@@ -217,7 +246,7 @@ export async function initIncomingSession(roomId, albumName) {
         progFill.style.width = '100%'
         progLabel.textContent = '100%'
         await new Promise(r => setTimeout(r, 800))
-        await enter(receivedFiles, albumName)
+        await enter(receivedFiles, albumName, true)
         // enter() calls location.reload() — page ends here
       })
       .onError(err => {
