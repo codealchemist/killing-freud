@@ -244,6 +244,8 @@ export class DemoShare {
         while (dc.bufferedAmount > MAX_BUFFERED) {
           await new Promise(r => setTimeout(r, 50))
         }
+        // Yield to the event loop every 16 chunks to keep the browser responsive
+        if (i > 0 && i % 16 === 0) await new Promise(r => setTimeout(r, 0))
         const chunk = buffer.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE)
         dc.send(chunk)
         sentBytes += chunk.byteLength

@@ -8,7 +8,10 @@ export function initShareButton(tracks) {
   const btn = document.getElementById('demoBannerShare')
   if (!btn) return
   btn.hidden = false
-  btn.addEventListener('click', () => _openShareModal(tracks))
+  btn.addEventListener('click', () => {
+    if (!document.getElementById('shareModal')?.hidden) return
+    _openShareModal(tracks)
+  })
 }
 
 // ─── Share modal (host/sender) ────────────────────────────
@@ -39,6 +42,9 @@ async function _openShareModal(tracks) {
   const share = new DemoShare()
   let shareUrl = ''
 
+  let _sendRafId = null
+  let _sendRafPct = 0
+
   share
     .onPeerConnected(async () => {
       status.textContent = 'Peer connected — sending files…'
@@ -51,11 +57,17 @@ async function _openShareModal(tracks) {
     })
     .onProgress((sent, total) => {
       progWrap.hidden = false
-      const pct = total ? Math.round((sent / total) * 100) : 0
-      progFill.style.width = `${pct}%`
-      progLabel.textContent = `${pct}%`
+      _sendRafPct = total ? Math.round((sent / total) * 100) : 0
+      if (_sendRafId) return
+      _sendRafId = requestAnimationFrame(() => {
+        _sendRafId = null
+        progFill.style.width = `${_sendRafPct}%`
+        progLabel.textContent = `${_sendRafPct}%`
+      })
     })
     .onComplete(() => {
+      cancelAnimationFrame(_sendRafId)
+      _sendRafId = null
       status.textContent = 'Transfer complete ✓'
       progFill.style.width = '100%'
       progLabel.textContent = '100%'
@@ -94,17 +106,16 @@ async function _openShareModal(tracks) {
   const onClose = () => {
     modal.hidden = true
     share.destroy()
+    cancelAnimationFrame(_sendRafId)
     copyBtn?.removeEventListener('click', onCopy)
     document.removeEventListener('keydown', onKeydown)
+    modal.removeEventListener('click', onBackdropClick)
   }
   const onKeydown = e => { if (e.key === 'Escape') onClose() }
+  const onBackdropClick = e => { if (e.target === modal) onClose() }
   document.addEventListener('keydown', onKeydown)
   closeBtn?.addEventListener('click', onClose, { once: true })
-
-  // Also close on backdrop click
-  modal.addEventListener('click', e => {
-    if (e.target === modal) onClose()
-  })
+  modal.addEventListener('click', onBackdropClick)
 }
 
 // ─── Incoming session overlay (receiver) ──────────────────
@@ -145,6 +156,8 @@ export async function initIncomingSession(roomId) {
 
     const share = new DemoShare()
     const receivedFiles = []
+    let _recvRafId = null
+    let _recvRafPct = 0
 
     share
       .onFileReceived((info, blob) => {
@@ -152,12 +165,18 @@ export async function initIncomingSession(roomId) {
       })
       .onProgress((received, total) => {
         progWrap.hidden = false
-        const pct = total ? Math.round((received / total) * 100) : 0
-        progFill.style.width = `${pct}%`
-        progLabel.textContent = `${pct}%`
-        status.textContent = 'Receiving files…'
+        _recvRafPct = total ? Math.round((received / total) * 100) : 0
+        if (_recvRafId) return
+        _recvRafId = requestAnimationFrame(() => {
+          _recvRafId = null
+          progFill.style.width = `${_recvRafPct}%`
+          progLabel.textContent = `${_recvRafPct}%`
+          status.textContent = 'Receiving files…'
+        })
       })
       .onComplete(async (albumName) => {
+        cancelAnimationFrame(_recvRafId)
+        _recvRafId = null
         status.textContent = 'Done! Opening player…'
         progFill.style.width = '100%'
         progLabel.textContent = '100%'
