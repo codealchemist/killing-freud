@@ -41,6 +41,8 @@ async function _openShareModal(tracks) {
 
   const share = new DemoShare()
   let shareUrl = ''
+  let _liveRoomId = null
+  let _qrDebounce = null
 
   let _sendRafId = null
   let _sendRafPct = 0
@@ -64,10 +66,23 @@ async function _openShareModal(tracks) {
     modal.hidden = true
     share.destroy()
     cancelAnimationFrame(_sendRafId)
+    clearTimeout(_qrDebounce)
+    albumInput?.removeEventListener('input', onAlbumInput)
     copyBtn?.removeEventListener('click', onCopy)
     document.removeEventListener('keydown', onKeydown)
     modal.removeEventListener('click', onBackdropClick)
   }
+
+  // Keep URL and QR in sync with the album input while the user is still typing.
+  const onAlbumInput = () => {
+    if (!_liveRoomId) return
+    const name = (albumInput.value.trim() || 'DEMO').toUpperCase()
+    shareUrl = `${location.origin}${location.pathname}?demo-share=${_liveRoomId}&album=${encodeURIComponent(name)}`
+    if (urlEl) urlEl.textContent = shareUrl
+    clearTimeout(_qrDebounce)
+    _qrDebounce = setTimeout(() => renderQR(canvas, shareUrl).catch(() => {}), 400)
+  }
+  albumInput?.addEventListener('input', onAlbumInput)
   const onKeydown = e => { if (e.key === 'Escape') onClose() }
   const onBackdropClick = e => { if (e.target === modal) onClose() }
   document.addEventListener('keydown', onKeydown)
@@ -110,12 +125,14 @@ async function _openShareModal(tracks) {
   try {
     const { roomId } = await share.startAsHost()
 
-    // Snapshot album name for the URL/QR at the moment ICE completes.
-    // The user can still edit it; onPeerConnected will read the live value.
+    // Make the room ID available so onAlbumInput can regenerate the URL/QR
+    // if the user edits the album name after this point.
+    _liveRoomId = roomId
+    if (codeEl) codeEl.textContent = roomId
+
+    // Build initial URL and QR using whatever is in the input right now.
     const albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
     shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
-
-    if (codeEl) codeEl.textContent = roomId
     await renderQR(canvas, shareUrl)
     urlEl.textContent = shareUrl
     status.textContent = 'Waiting for someone to scan…'
