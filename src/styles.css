@@ -423,18 +423,94 @@ input[type='range'] {
   margin-bottom: 0;
 }
 
-.music-header__art {
-  width: 140px;
-  height: 140px;
-  object-fit: cover;
+/* ── Title row (heading + name input + pencil) ───────────── */
+.music-header__title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.music-header__name-input {
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  outline: none;
+  padding: 0;
+  width: 100%;
+  line-height: 1;
+}
+
+.music-header__edit-btn {
   flex-shrink: 0;
-  border-radius: 2px;
-  display: block;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.music-header__edit-btn:hover {
+  color: var(--accent-hover);
+}
+
+/* ── Album art drop zone (desktop only) ─────────────────── */
+.music-header__art-area {
+  flex-shrink: 0;
   align-self: flex-start;
 }
 
+.music-header__art-drop {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border: 1px dashed var(--border);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.music-header__art-drop:hover,
+.music-header__art-drop.is-dragging {
+  border-color: var(--accent);
+}
+
+.music-header__art-placeholder {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px;
+  pointer-events: none;
+  line-height: 1.4;
+}
+
+.music-header__art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 @media (max-width: 640px) {
-  .music-header__art {
+  .music-header__art-area {
     display: none;
   }
 }
@@ -1654,49 +1730,6 @@ cite {
 
 .share-modal__continue {
   width: 100%;
-}
-
-.share-modal__art-drop {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  border: 1px dashed var(--border);
-  border-radius: 2px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  overflow: hidden;
-  transition: border-color var(--transition);
-}
-
-.share-modal__art-drop:hover,
-.share-modal__art-drop.is-dragging {
-  border-color: var(--accent);
-}
-
-.share-modal__art-hint {
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  text-align: center;
-  padding: 8px;
-  pointer-events: none;
-}
-
-.share-modal__art-preview {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.share-modal__art-error {
-  font-size: 0.72rem;
-  color: #c06060;
-  text-align: center;
 }
 
 .share-modal__album-input {

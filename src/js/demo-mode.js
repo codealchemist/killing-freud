@@ -18,6 +18,15 @@ export function getAlbumArt() {
   return localStorage.getItem(ART_KEY) || null
 }
 
+export function setAlbumName(name) {
+  localStorage.setItem(ALBUM_KEY, name || 'DEMO')
+}
+
+export function setAlbumArt(dataUrl) {
+  if (dataUrl) localStorage.setItem(ART_KEY, dataUrl)
+  else localStorage.removeItem(ART_KEY)
+}
+
 export function isReceived() {
   return localStorage.getItem(RECEIVED_KEY) === 'true'
 }

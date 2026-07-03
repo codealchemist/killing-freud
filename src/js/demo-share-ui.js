@@ -1,37 +1,6 @@
 import { DemoShare } from './demo-share.js'
 import { renderQR } from './qr.js'
-import { enter, isReceived, getAlbumName, getAlbumArt } from './demo-mode.js'
-
-// ─── Album art helpers ────────────────────────────────────
-
-const ART_MAX_BYTES = 2 * 1024 * 1024   // 2 MB raw file limit
-const ART_MAX_DIM   = 512               // longest edge after resize
-const ART_QUALITY   = 0.82
-const ART_TYPES     = new Set(['image/jpeg', 'image/png', 'image/webp'])
-
-function processArt(file) {
-  if (!ART_TYPES.has(file.type))
-    return Promise.reject(new Error('Use JPEG, PNG or WebP'))
-  if (file.size > ART_MAX_BYTES)
-    return Promise.reject(new Error('Max 2 MB'))
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    const url = URL.createObjectURL(file)
-    img.onload = () => {
-      URL.revokeObjectURL(url)
-      const scale = Math.min(1, ART_MAX_DIM / Math.max(img.width, img.height))
-      const w = Math.round(img.width * scale)
-      const h = Math.round(img.height * scale)
-      const canvas = document.createElement('canvas')
-      canvas.width = w
-      canvas.height = h
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h)
-      resolve(canvas.toDataURL('image/jpeg', ART_QUALITY))
-    }
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Could not read image')) }
-    img.src = url
-  })
-}
+import { enter, getAlbumName, getAlbumArt } from './demo-mode.js'
 
 function applyArtBackground(el, dataUrl) {
   if (!el || !dataUrl) return
@@ -65,8 +34,6 @@ export function initShareButton(tracks) {
 async function _openShareModal(tracks) {
   const modal              = document.getElementById('shareModal')
   const modalBox           = modal?.querySelector('.share-modal__box')
-  const step1              = document.getElementById('shareStep1')
-  const step2              = document.getElementById('shareStep2')
   const sessionStateEl     = document.getElementById('shareSessionState')
   const completeStateEl    = document.getElementById('shareCompleteState')
   const canvas             = document.getElementById('shareQr')
@@ -76,87 +43,28 @@ async function _openShareModal(tracks) {
   const progWrap           = document.getElementById('shareProgressWrap')
   const progFill           = document.getElementById('shareProgressFill')
   const progLabel          = document.getElementById('shareProgressLabel')
-  const albumInput         = document.getElementById('shareAlbumName')
   const albumNameEl        = document.getElementById('shareStep2AlbumName')
   const sharedCountEl      = document.getElementById('shareSharedCount')
   const shareSessionCountEl = document.getElementById('shareSessionCount')
-  const artDrop            = document.getElementById('shareArtDrop')
-  const artInput           = document.getElementById('shareArtInput')
-  const artPreview         = document.getElementById('shareArtPreview')
-  const artHint            = document.getElementById('shareArtHint')
-  const artError           = document.getElementById('shareArtError')
-  const continueBtn        = document.getElementById('shareContinueBtn')
   const shareAgainBtn      = document.getElementById('shareAgainBtn')
   const copyBtn            = document.getElementById('shareCopyBtn')
   const closeBtn           = document.getElementById('shareModalClose')
 
   if (!modal) return
 
-  const received = isReceived()
+  // Album name and art come from the main-view controls, not the modal.
+  const albumName     = getAlbumName()
+  const albumArtDataUrl = getAlbumArt()
 
-  // Received albums: pre-fill name, lock input, hide art picker (art comes
-  // from storage and is forwarded automatically).
-  if (received) {
-    albumInput.value = getAlbumName()
-    albumInput.disabled = true
-    if (artDrop) artDrop.hidden = true
-  } else {
-    albumInput.disabled = false
-    if (artDrop) artDrop.hidden = false
-  }
-
-  // Reset to step 1
-  step1.hidden = false
-  step2.hidden = true
-  clearArtBackground(modalBox)
+  if (albumNameEl) albumNameEl.textContent = albumName
+  applyArtBackground(modalBox, albumArtDataUrl)
   modal.hidden = false
-  if (!albumInput.disabled) {
-    albumInput.focus()
-    albumInput.select()
-  }
 
-  // Album art: for received albums load from storage, otherwise start empty.
-  let albumArtDataUrl = received ? getAlbumArt() : null
-
-  // Show a preview if re-opening modal while received art is already set.
-  if (albumArtDataUrl && artPreview && artHint) {
-    artPreview.src = albumArtDataUrl
-    artPreview.hidden = false
-    artHint.hidden = true
-  }
-
-  let albumName = ''
   let shareUrl = ''
   let sharedCount = 0
   let currentShare = null
   let _sendRafId = null
   let _sendRafPct = 0
-
-  // ─── Art picker (non-received albums only) ────────────────
-
-  const setArt = async file => {
-    if (!file) return
-    if (artError) artError.hidden = true
-    try {
-      albumArtDataUrl = await processArt(file)
-      if (artPreview) { artPreview.src = albumArtDataUrl; artPreview.hidden = false }
-      if (artHint) artHint.hidden = true
-    } catch (err) {
-      if (artError) { artError.textContent = err.message; artError.hidden = false }
-    }
-  }
-
-  artInput?.addEventListener('change', e => setArt(e.target.files?.[0]))
-
-  artDrop?.addEventListener('dragover', e => { e.preventDefault(); artDrop.classList.add('is-dragging') })
-  artDrop?.addEventListener('dragleave', () => artDrop.classList.remove('is-dragging'))
-  artDrop?.addEventListener('drop', e => {
-    e.preventDefault()
-    artDrop.classList.remove('is-dragging')
-    setArt(e.dataTransfer.files?.[0])
-  })
-
-  // ─── ──────────────────────────────────────────────────────
 
   const updateCount = () => {
     if (sharedCount === 0) {
@@ -186,16 +94,13 @@ async function _openShareModal(tracks) {
     currentShare?.destroy()
     cancelAnimationFrame(_sendRafId)
     clearArtBackground(modalBox)
-    albumInput?.removeEventListener('keydown', onAlbumKeydown)
     copyBtn?.removeEventListener('click', onCopy)
     shareAgainBtn?.removeEventListener('click', onShareAgain)
     document.removeEventListener('keydown', onKeydown)
     modal.removeEventListener('click', onBackdropClick)
   }
-  const onAlbumKeydown = e => { if (e.key === 'Enter') { e.preventDefault(); continueBtn?.click() } }
   const onKeydown = e => { if (e.key === 'Escape') onClose() }
   const onBackdropClick = e => { if (e.target === modal) onClose() }
-  albumInput?.addEventListener('keydown', onAlbumKeydown)
   document.addEventListener('keydown', onKeydown)
   closeBtn?.addEventListener('click', onClose, { once: true })
   modal.addEventListener('click', onBackdropClick)
@@ -261,15 +166,8 @@ async function _openShareModal(tracks) {
   const onShareAgain = () => startSession()
   shareAgainBtn?.addEventListener('click', onShareAgain)
 
-  // Continue: finalise album name + art, apply background, show step 2.
-  continueBtn?.addEventListener('click', async () => {
-    albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
-    if (albumNameEl) albumNameEl.textContent = albumName
-    step1.hidden = true
-    step2.hidden = false
-    applyArtBackground(modalBox, albumArtDataUrl)
-    await startSession()
-  }, { once: true })
+  // Name and art already set above — start the session immediately.
+  startSession()
 }
 
 // ─── Incoming session overlay (receiver) ──────────────────

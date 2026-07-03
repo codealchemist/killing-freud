@@ -58,46 +58,30 @@
       <div class="share-modal__box">
         <button class="share-modal__close" id="shareModalClose" aria-label="Close">&#x2715;</button>
         <h2 class="share-modal__title" id="shareModalTitle">Share DEMO Session</h2>
+        <p class="share-modal__album-name" id="shareStep2AlbumName"></p>
 
-        <!-- Step 1: choose album name -->
-        <div class="share-modal__step" id="shareStep1">
-          <input class="share-modal__album-input" id="shareAlbumName" type="text" value="DEMO" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Album name">
-          <label class="share-modal__art-drop" id="shareArtDrop" aria-label="Add album art">
-            <input type="file" id="shareArtInput" accept="image/jpeg,image/png,image/webp" hidden aria-hidden="true">
-            <span class="share-modal__art-hint" id="shareArtHint">Album art</span>
-            <img class="share-modal__art-preview" id="shareArtPreview" hidden alt="">
-          </label>
-          <p class="share-modal__art-error" id="shareArtError" hidden></p>
-          <button class="btn btn--primary share-modal__continue" id="shareContinueBtn">Continue</button>
+        <!-- Active session: room code, QR, URL, status, progress -->
+        <div class="share-modal__step" id="shareSessionState">
+          <p class="share-modal__code" id="shareCode"></p>
+          <canvas id="shareQr" class="share-modal__qr"></canvas>
+          <div class="share-modal__url-row">
+            <span class="share-modal__url" id="shareUrl"></span>
+            <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
+          </div>
+          <p class="share-modal__status" id="shareStatus"></p>
+          <div class="share-modal__progress" id="shareProgressWrap" hidden>
+            <div class="share-modal__bar">
+              <div class="share-modal__fill" id="shareProgressFill"></div>
+            </div>
+            <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+          </div>
+          <p class="share-modal__shared-count" id="shareSessionCount" hidden></p>
         </div>
 
-        <!-- Step 2: QR + connection (shown after Continue) -->
-        <div class="share-modal__step" id="shareStep2" hidden>
-          <p class="share-modal__album-name" id="shareStep2AlbumName"></p>
-
-          <!-- Active session: room code, QR, URL, status, progress -->
-          <div class="share-modal__step" id="shareSessionState">
-            <p class="share-modal__code" id="shareCode"></p>
-            <canvas id="shareQr" class="share-modal__qr"></canvas>
-            <div class="share-modal__url-row">
-              <span class="share-modal__url" id="shareUrl"></span>
-              <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
-            </div>
-            <p class="share-modal__status" id="shareStatus"></p>
-            <div class="share-modal__progress" id="shareProgressWrap" hidden>
-              <div class="share-modal__bar">
-                <div class="share-modal__fill" id="shareProgressFill"></div>
-              </div>
-              <span class="share-modal__pct" id="shareProgressLabel">0%</span>
-            </div>
-            <p class="share-modal__shared-count" id="shareSessionCount" hidden></p>
-          </div>
-
-          <!-- Completion: peer count + share again -->
-          <div class="share-modal__step" id="shareCompleteState" hidden>
-            <p class="share-modal__shared-count" id="shareSharedCount"></p>
-            <button class="btn btn--primary share-modal__continue" id="shareAgainBtn">Share again</button>
-          </div>
+        <!-- Completion: peer count + share again -->
+        <div class="share-modal__step" id="shareCompleteState" hidden>
+          <p class="share-modal__shared-count" id="shareSharedCount"></p>
+          <button class="btn btn--primary share-modal__continue" id="shareAgainBtn">Share again</button>
         </div>
       </div>
     </div>
@@ -185,10 +169,22 @@
       <div class="container">
         <div class="music-header">
           <div class="music-header__text">
-            <h2 class="section-title" id="musicSectionTitle">Music</h2>
+            <div class="music-header__title-row">
+              <h2 class="section-title" id="musicSectionTitle">Music</h2>
+              <input class="music-header__name-input" id="musicNameInput" hidden type="text" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Edit album name">
+              <button class="music-header__edit-btn" id="musicEditNameBtn" hidden aria-label="Edit album name">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+            </div>
             <p class="section-subtitle" id="musicSectionSubtitle" hidden></p>
           </div>
-          <img class="music-header__art" id="musicAlbumArt" hidden alt="Album art">
+          <div class="music-header__art-area" id="musicArtArea" hidden>
+            <input type="file" id="musicArtInput" accept="image/jpeg,image/png,image/webp" hidden aria-hidden="true">
+            <div class="music-header__art-drop" id="musicArtDrop" tabindex="0" role="button" aria-label="Upload album art">
+              <span class="music-header__art-placeholder">Drop album art</span>
+              <img class="music-header__art-img" id="musicAlbumArt" hidden alt="Album art">
+            </div>
+          </div>
         </div>
 
         <div class="player">
