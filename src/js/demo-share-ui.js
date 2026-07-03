@@ -31,7 +31,8 @@ async function _openShareModal(tracks) {
   const progLabel        = document.getElementById('shareProgressLabel')
   const albumInput       = document.getElementById('shareAlbumName')
   const albumNameEl      = document.getElementById('shareStep2AlbumName')
-  const sharedCountEl    = document.getElementById('shareSharedCount')
+  const sharedCountEl      = document.getElementById('shareSharedCount')
+  const shareSessionCountEl = document.getElementById('shareSessionCount')
   const continueBtn      = document.getElementById('shareContinueBtn')
   const shareAgainBtn    = document.getElementById('shareAgainBtn')
   const copyBtn          = document.getElementById('shareCopyBtn')
@@ -62,6 +63,16 @@ async function _openShareModal(tracks) {
   let currentShare = null
   let _sendRafId = null
   let _sendRafPct = 0
+
+  const updateCount = () => {
+    if (sharedCount === 0) {
+      if (shareSessionCountEl) shareSessionCountEl.hidden = true
+      return
+    }
+    const text = sharedCount === 1 ? 'Shared with 1 peer' : `Shared with ${sharedCount} peers`
+    if (shareSessionCountEl) { shareSessionCountEl.textContent = text; shareSessionCountEl.hidden = false }
+    if (sharedCountEl) sharedCountEl.textContent = text
+  }
 
   const onCopy = async () => {
     if (!shareUrl) return
@@ -111,6 +122,7 @@ async function _openShareModal(tracks) {
     progLabel.textContent = '0%'
     urlEl.textContent = ''
     status.textContent = 'Creating session…'
+    updateCount()
 
     share
       .onPeerConnected(async () => {
@@ -118,9 +130,7 @@ async function _openShareModal(tracks) {
         try {
           await share.sendTracks(tracks, albumName)
           sharedCount++
-          const n = sharedCount
-          sharedCountEl.textContent =
-            n === 1 ? 'Shared with 1 peer' : `Shared with ${n} peers`
+          updateCount()
           sessionStateEl.hidden = true
           completeStateEl.hidden = false
         } catch (err) {
