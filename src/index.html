@@ -49,7 +49,49 @@
     <div class="demo-banner" id="demoBanner" hidden>
       <span class="demo-banner__label">DEMO MODE</span>
       <span class="demo-banner__hint">Listening to your dropped files</span>
+      <button class="demo-banner__share" id="demoBannerShare" hidden aria-label="Share demo session">Share</button>
       <button class="demo-banner__exit" id="demoBannerExit" aria-label="Exit demo mode">&#x2715;</button>
+    </div>
+
+    <!-- Share modal (host/sender) -->
+    <div class="share-modal" id="shareModal" hidden role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+      <div class="share-modal__box">
+        <button class="share-modal__close" id="shareModalClose" aria-label="Close">&#x2715;</button>
+        <h2 class="share-modal__title" id="shareModalTitle">Share DEMO Session</h2>
+        <p class="share-modal__code" id="shareCode"></p>
+        <canvas id="shareQr" class="share-modal__qr"></canvas>
+        <div class="share-modal__url-row">
+          <span class="share-modal__url" id="shareUrl"></span>
+          <button class="share-modal__copy" id="shareCopyBtn">Copy</button>
+        </div>
+        <p class="share-modal__status" id="shareStatus"></p>
+        <div class="share-modal__progress" id="shareProgressWrap" hidden>
+          <div class="share-modal__bar">
+            <div class="share-modal__fill" id="shareProgressFill"></div>
+          </div>
+          <span class="share-modal__pct" id="shareProgressLabel">0%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incoming session overlay (receiver) -->
+    <div class="incoming-session" id="incomingSession" hidden role="dialog" aria-modal="true" aria-labelledby="incomingSessionTitle">
+      <div class="incoming-session__box">
+        <h2 class="incoming-session__title" id="incomingSessionTitle">Incoming DEMO Session</h2>
+        <p class="incoming-session__code" id="incomingCode"></p>
+        <p class="incoming-session__hint">Someone wants to share their audio files with you.</p>
+        <div class="incoming-session__actions">
+          <button class="btn btn--primary" id="incomingAccept">Accept</button>
+          <button class="incoming-session__decline" id="incomingDecline">Decline</button>
+        </div>
+        <p class="incoming-session__status" id="incomingStatus"></p>
+        <div class="incoming-session__progress" id="incomingProgressWrap" hidden>
+          <div class="incoming-session__bar">
+            <div class="incoming-session__fill" id="incomingProgressFill"></div>
+          </div>
+          <span class="incoming-session__pct" id="incomingProgressLabel">0%</span>
+        </div>
+      </div>
     </div>
 
     <!-- Drop overlay -->
