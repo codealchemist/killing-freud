@@ -69,6 +69,7 @@ export class AudioPlayer {
       this._isDemo = true
       this.tracks = demoTracks
       this._renderTracklist()
+      this._renderAlbumMeta()
       if (this.offlineControlsEl) this.offlineControlsEl.hidden = true
       this._showLoading(false)
       this.tracklistEl.addEventListener('click', e => {
@@ -117,6 +118,7 @@ export class AudioPlayer {
     }
 
     this._renderTracklist()
+    this._renderAlbumMeta()
     this._renderOfflineControls()
     this._showLoading(false)
 
@@ -512,6 +514,57 @@ export class AudioPlayer {
     return `${Math.floor(s / 60)}:${Math.floor(s % 60)
       .toString()
       .padStart(2, '0')}`
+  }
+
+  // ─── Album meta (song count + total duration) ─────────────
+
+  _renderAlbumMeta() {
+    const el = document.getElementById('musicSectionSubtitle')
+    if (!el) return
+    const count = this.tracks.length
+    if (count === 0) { el.hidden = true; return }
+
+    const label = n => `${n} song${n !== 1 ? 's' : ''}`
+    el.textContent = label(count)
+    el.hidden = false
+
+    // Probe all track durations in parallel; update text once resolved.
+    Promise.allSettled(this.tracks.map(t => this._probeDuration(t)))
+      .then(results => {
+        const total = results.reduce(
+          (s, r) => s + (r.status === 'fulfilled' ? (r.value || 0) : 0), 0
+        )
+        if (total > 0)
+          el.textContent = `${label(count)}, ${this._formatAlbumDuration(total)}`
+      })
+  }
+
+  _probeDuration(track) {
+    return new Promise(resolve => {
+      const isBlob = !!track.blob
+      const url = isBlob ? URL.createObjectURL(track.blob) : track.url
+      if (!url) return resolve(0)
+      const a = new Audio()
+      a.preload = 'metadata'
+      const finish = d => {
+        if (isBlob) URL.revokeObjectURL(url)
+        a.src = ''
+        resolve(isFinite(d) && d > 0 ? d : 0)
+      }
+      a.addEventListener('loadedmetadata', () => finish(a.duration), { once: true })
+      a.addEventListener('error', () => finish(0), { once: true })
+      a.src = url
+    })
+  }
+
+  _formatAlbumDuration(secs) {
+    const s = Math.round(secs)
+    if (s < 60) return `${s} sec`
+    const m = Math.floor(s / 60)
+    if (m < 60) return `${m} min`
+    const h = Math.floor(m / 60)
+    const rem = m % 60
+    return rem > 0 ? `${h} hr ${rem} min` : `${h} hr`
   }
 
 }
