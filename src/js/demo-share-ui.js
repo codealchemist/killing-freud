@@ -28,8 +28,9 @@ async function _openShareModal(tracks) {
   const progFill    = document.getElementById('shareProgressFill')
   const progLabel   = document.getElementById('shareProgressLabel')
   const albumInput  = document.getElementById('shareAlbumName')
-  const continueBtn = document.getElementById('shareContinueBtn')
-  const copyBtn     = document.getElementById('shareCopyBtn')
+  const continueBtn    = document.getElementById('shareContinueBtn')
+  const albumNameEl    = document.getElementById('shareStep2AlbumName')
+  const copyBtn        = document.getElementById('shareCopyBtn')
   const closeBtn    = document.getElementById('shareModalClose')
 
   if (!modal) return
@@ -118,6 +119,7 @@ async function _openShareModal(tracks) {
   // written to the signal store once the album name is final.
   continueBtn?.addEventListener('click', async () => {
     albumName = (albumInput?.value.trim() || 'DEMO').toUpperCase()
+    if (albumNameEl) albumNameEl.textContent = albumName
     step1.hidden = true
     step2.hidden = false
     status.textContent = 'Creating session…'
