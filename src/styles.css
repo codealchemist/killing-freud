@@ -127,6 +127,15 @@ input[type='range'] {
   opacity: 0.7;
 }
 
+.section-subtitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 36px;
+  margin-top: 0;
+}
+
 .btn {
   display: inline-block;
   padding: 14px 36px;
@@ -397,6 +406,141 @@ input[type='range'] {
   background: var(--bg);
 }
 
+/* ── Music section header (title + optional album art) ── */
+.music-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+.music-header .section-title {
+  margin-bottom: 10px;
+}
+
+.music-header .section-subtitle {
+  margin-bottom: 0;
+}
+
+/* ── Title row (heading + name input + pencil) ───────────── */
+.music-header__title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+/* When the album name is editable, swap the default underline dash for a
+   dotted line that reaches the pencil icon, signaling it's clickable. Sizing
+   (line-height, border, margin) mirrors .music-header__name-input below so
+   the row's height stays identical between view and edit states — otherwise
+   the song/time count subtitle would jump when toggling. */
+.music-header__title.is-editable {
+  cursor: pointer;
+  line-height: 1;
+  margin-bottom: 10px;
+  border-bottom: 2px dotted var(--text-muted);
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.music-header__title.is-editable::after {
+  content: none;
+}
+
+.music-header__title.is-editable:hover {
+  color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.music-header__name-input {
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 6vw, 3.6rem);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text);
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.8);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  outline: none;
+  padding: 0;
+  margin-bottom: 10px;
+  width: 100%;
+  line-height: 1;
+}
+
+.music-header__edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.music-header__edit-btn:hover {
+  color: var(--accent-hover);
+}
+
+/* ── Album art drop zone (desktop only) ─────────────────── */
+.music-header__art-area {
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.music-header__art-drop {
+  position: relative;
+  /* Above .drop-overlay (z-index: 9999) so this drop target stays visible
+     and reachable while the global "drop audio files" overlay is showing. */
+  z-index: 10000;
+  width: 140px;
+  height: 140px;
+  border: 1px dashed var(--border);
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+
+.music-header__art-drop:hover,
+.music-header__art-drop.is-dragging {
+  border-color: var(--accent);
+}
+
+.music-header__art-placeholder {
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 12px;
+  pointer-events: none;
+  line-height: 1.4;
+}
+
+.music-header__art-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@media (max-width: 640px) {
+  .music-header__art-area {
+    display: none;
+  }
+}
+
 .player {
   background: var(--surface);
   border: 1px solid rgba(122, 138, 138, 0.15);
@@ -436,6 +580,15 @@ input[type='range'] {
 
   .player__volume {
     grid-column: 1 / -1;
+  }
+
+  /* Album art as player background on mobile */
+  .player.has-art {
+    background-image:
+      linear-gradient(rgba(8, 8, 8, 0.80), rgba(8, 8, 8, 0.80)),
+      var(--player-art);
+    background-size: cover;
+    background-position: center;
   }
 }
 
@@ -1593,6 +1746,46 @@ cite {
   margin-bottom: 4px;
 }
 
+.share-modal__step {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.share-modal__continue {
+  width: 100%;
+}
+
+.share-modal__album-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 7px 10px;
+  font-family: var(--font-heading);
+  font-size: 0.88rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--text);
+  transition: border-color var(--transition);
+}
+
+.share-modal__album-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.share-modal__album-name {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+}
+
 .share-modal__code {
   font-family: var(--font-heading);
   font-size: 2rem;
@@ -1643,6 +1836,14 @@ cite {
 
 .share-modal__copy:hover {
   color: #fff;
+}
+
+.share-modal__shared-count {
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
 }
 
 .share-modal__status {
@@ -1720,6 +1921,14 @@ cite {
   color: var(--text);
 }
 
+.incoming-session__album {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--accent-hover);
+}
+
 .incoming-session__code {
   font-family: var(--font-heading);
   font-size: 2rem;
@@ -1760,6 +1969,25 @@ cite {
 .incoming-session__decline:disabled {
   opacity: 0.4;
   cursor: default;
+}
+
+.incoming-session__cancel {
+  padding: 10px 28px;
+  font-family: var(--font-heading);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.incoming-session__cancel:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
 }
 
 .incoming-session__status {

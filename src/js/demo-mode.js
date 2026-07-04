@@ -1,13 +1,37 @@
 import { saveDemoTrack, getAllDemoTracks, clearDemoTracks } from './offline-storage.js'
 
-const ACTIVE_KEY = 'kf_demo_active'
-const IDS_KEY = 'kf_demo_track_ids'
+const ACTIVE_KEY   = 'kf_demo_active'
+const IDS_KEY      = 'kf_demo_track_ids'
+const ALBUM_KEY    = 'kf_demo_album'
+const ART_KEY      = 'kf_demo_art'
+const RECEIVED_KEY = 'kf_demo_received'
 
 export function isActive() {
   return localStorage.getItem(ACTIVE_KEY) === 'true'
 }
 
-export async function enter(files) {
+export function getAlbumName() {
+  return localStorage.getItem(ALBUM_KEY) || 'DEMO'
+}
+
+export function getAlbumArt() {
+  return localStorage.getItem(ART_KEY) || null
+}
+
+export function setAlbumName(name) {
+  localStorage.setItem(ALBUM_KEY, name || 'DEMO')
+}
+
+export function setAlbumArt(dataUrl) {
+  if (dataUrl) localStorage.setItem(ART_KEY, dataUrl)
+  else localStorage.removeItem(ART_KEY)
+}
+
+export function isReceived() {
+  return localStorage.getItem(RECEIVED_KEY) === 'true'
+}
+
+export async function enter(files, albumName = 'DEMO', received = false, albumArt = null) {
   await clearDemoTracks()
 
   const ids = []
@@ -19,6 +43,10 @@ export async function enter(files) {
 
   localStorage.setItem(ACTIVE_KEY, 'true')
   localStorage.setItem(IDS_KEY, JSON.stringify(ids))
+  localStorage.setItem(ALBUM_KEY, albumName)
+  localStorage.setItem(RECEIVED_KEY, received ? 'true' : 'false')
+  if (albumArt) localStorage.setItem(ART_KEY, albumArt)
+  else localStorage.removeItem(ART_KEY)
   location.reload()
 }
 
@@ -26,6 +54,9 @@ export async function exit() {
   await clearDemoTracks()
   localStorage.removeItem(ACTIVE_KEY)
   localStorage.removeItem(IDS_KEY)
+  localStorage.removeItem(ALBUM_KEY)
+  localStorage.removeItem(ART_KEY)
+  localStorage.removeItem(RECEIVED_KEY)
   location.reload()
 }
 

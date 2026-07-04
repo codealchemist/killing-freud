@@ -103,15 +103,123 @@ const demoBanner = document.getElementById('demoBanner')
 if (DemoMode.isActive() && demoBanner) {
   demoBanner.hidden = false
   document.body.classList.add('demo-mode')
+
+  const hintEl      = document.getElementById('demoBannerHint')
+  const musicTitleEl = document.getElementById('musicSectionTitle')
+  const nameInputEl = document.getElementById('musicNameInput')
+  const editBtnEl   = document.getElementById('musicEditNameBtn')
+  const artAreaEl   = document.getElementById('musicArtArea')
+  const artDropEl   = document.getElementById('musicArtDrop')
+  const artInputEl  = document.getElementById('musicArtInput')
+  const artImgEl    = document.getElementById('musicAlbumArt')
+  const playerEl    = document.querySelector('.player')
+
+  const applyArt = dataUrl => {
+    DemoMode.setAlbumArt(dataUrl)
+    artImgEl.src = dataUrl
+    artImgEl.hidden = false
+    if (playerEl) {
+      playerEl.style.setProperty('--player-art', `url("${dataUrl}")`)
+      playerEl.classList.add('has-art')
+    }
+  }
+
+  // ── Initialise from stored state ──────────────────────────
+  const storedName = DemoMode.getAlbumName()
+  if (musicTitleEl) musicTitleEl.textContent = storedName
+  if (hintEl) hintEl.textContent = `Listening to ${storedName}`
+
+  const storedArt = DemoMode.getAlbumArt()
+  if (storedArt) applyArt(storedArt)
+
+  // ── Art area (desktop only) ───────────────────────────────
+  if (artAreaEl) artAreaEl.hidden = false
+
+  if (!DemoMode.isReceived()) {
+    const processAndApply = async file => {
+      if (!file) return
+      const ART_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+      if (!ART_TYPES.has(file.type) || file.size > 2 * 1024 * 1024) return
+      const img = new Image()
+      const blobUrl = URL.createObjectURL(file)
+      img.onload = () => {
+        URL.revokeObjectURL(blobUrl)
+        const MAX = 512, scale = Math.min(1, MAX / Math.max(img.width, img.height))
+        const w = Math.round(img.width * scale), h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w; canvas.height = h
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+        applyArt(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.src = blobUrl
+    }
+
+    artInputEl?.addEventListener('change', e => processAndApply(e.target.files?.[0]))
+    artDropEl?.addEventListener('click', () => artInputEl?.click())
+    artDropEl?.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') artInputEl?.click() })
+    artDropEl?.addEventListener('dragover', e => { e.preventDefault(); artDropEl.classList.add('is-dragging') })
+    artDropEl?.addEventListener('dragleave', () => artDropEl.classList.remove('is-dragging'))
+    artDropEl?.addEventListener('drop', e => {
+      e.preventDefault()
+      artDropEl.classList.remove('is-dragging')
+      processAndApply(e.dataTransfer.files?.[0])
+    })
+
+    // ── Inline album name editing ─────────────────────────────
+    if (editBtnEl) editBtnEl.hidden = false
+    if (musicTitleEl) {
+      musicTitleEl.classList.add('is-editable')
+      musicTitleEl.setAttribute('role', 'button')
+      musicTitleEl.setAttribute('tabindex', '0')
+    }
+
+    const commitName = () => {
+      const newName = (nameInputEl.value.trim() || 'DEMO').toUpperCase()
+      DemoMode.setAlbumName(newName)
+      if (musicTitleEl) musicTitleEl.textContent = newName
+      if (hintEl) hintEl.textContent = `Listening to ${newName}`
+      musicTitleEl.hidden = false
+      editBtnEl.hidden = false
+      nameInputEl.hidden = true
+    }
+
+    const enterEditMode = () => {
+      nameInputEl.value = musicTitleEl.textContent
+      musicTitleEl.hidden = true
+      editBtnEl.hidden = true
+      nameInputEl.hidden = false
+      nameInputEl.focus()
+      nameInputEl.select()
+    }
+
+    editBtnEl?.addEventListener('click', enterEditMode)
+    musicTitleEl?.addEventListener('click', enterEditMode)
+    musicTitleEl?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterEditMode() }
+    })
+    nameInputEl?.addEventListener('blur', commitName)
+    nameInputEl?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); nameInputEl.blur() }
+      if (e.key === 'Escape') {
+        nameInputEl.value = musicTitleEl.textContent  // discard edit
+        nameInputEl.blur()
+      }
+    })
+  }
+
   document.getElementById('music')?.scrollTo(0, 0)
-  document.getElementById('demoBannerExit')?.addEventListener('click', () => {
-    DemoMode.exit()
-  })
+  document.getElementById('demoBannerExit')?.addEventListener('click', () => DemoMode.exit())
 }
 
 // ─── Incoming share session (detected on any page load) ───
-const shareParam = new URLSearchParams(location.search).get('demo-share')
-if (shareParam) initIncomingSession(shareParam)
+const _qs = new URLSearchParams(location.search)
+const shareParam = _qs.get('demo-share')
+if (shareParam) {
+  // Strip control characters and cap length; textContent handles the rest
+  const rawAlbum = _qs.get('album') ?? ''
+  const albumParam = rawAlbum.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 50)
+  initIncomingSession(shareParam, albumParam || undefined)
+}
 
 // ─── Audio Player ──────────────────────────────────────────
 const player = new AudioPlayer()
