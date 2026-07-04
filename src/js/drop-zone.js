@@ -7,7 +7,15 @@ export function initDropZone() {
   document.addEventListener('dragenter', e => {
     e.preventDefault()
     dragDepth++
-    if (overlay && dragDepth === 1) overlay.hidden = false
+    if (overlay && dragDepth === 1) {
+      // In demo mode the album art drop target sits above the player, in the
+      // music header — keep it clear of the scrim so it stays usable.
+      const player = document.body.classList.contains('demo-mode')
+        ? document.querySelector('.player')
+        : null
+      overlay.style.top = player ? `${player.getBoundingClientRect().top}px` : ''
+      overlay.hidden = false
+    }
   })
 
   document.addEventListener('dragleave', () => {

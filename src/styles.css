@@ -430,6 +430,28 @@ input[type='range'] {
   gap: 10px;
 }
 
+/* When the album name is editable, swap the default underline dash for a
+   dotted line that reaches the pencil icon, signaling it's clickable. Sizing
+   (line-height, border, margin) mirrors .music-header__name-input below so
+   the row's height stays identical between view and edit states — otherwise
+   the song/time count subtitle would jump when toggling. */
+.music-header__title.is-editable {
+  cursor: pointer;
+  line-height: 1;
+  margin-bottom: 10px;
+  border-bottom: 2px dotted var(--text-muted);
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.music-header__title.is-editable::after {
+  content: none;
+}
+
+.music-header__title.is-editable:hover {
+  color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
 .music-header__name-input {
   font-family: var(--font-heading);
   font-size: clamp(2.4rem, 6vw, 3.6rem);
@@ -443,6 +465,7 @@ input[type='range'] {
   border-bottom: 2px solid var(--accent);
   outline: none;
   padding: 0;
+  margin-bottom: 10px;
   width: 100%;
   line-height: 1;
 }
@@ -472,6 +495,9 @@ input[type='range'] {
 
 .music-header__art-drop {
   position: relative;
+  /* Above .drop-overlay (z-index: 9999) so this drop target stays visible
+     and reachable while the global "drop audio files" overlay is showing. */
+  z-index: 10000;
   width: 140px;
   height: 140px;
   border: 1px dashed var(--border);

@@ -167,6 +167,11 @@ if (DemoMode.isActive() && demoBanner) {
 
     // ── Inline album name editing ─────────────────────────────
     if (editBtnEl) editBtnEl.hidden = false
+    if (musicTitleEl) {
+      musicTitleEl.classList.add('is-editable')
+      musicTitleEl.setAttribute('role', 'button')
+      musicTitleEl.setAttribute('tabindex', '0')
+    }
 
     const commitName = () => {
       const newName = (nameInputEl.value.trim() || 'DEMO').toUpperCase()
@@ -178,13 +183,19 @@ if (DemoMode.isActive() && demoBanner) {
       nameInputEl.hidden = true
     }
 
-    editBtnEl?.addEventListener('click', () => {
+    const enterEditMode = () => {
       nameInputEl.value = musicTitleEl.textContent
       musicTitleEl.hidden = true
       editBtnEl.hidden = true
       nameInputEl.hidden = false
       nameInputEl.focus()
       nameInputEl.select()
+    }
+
+    editBtnEl?.addEventListener('click', enterEditMode)
+    musicTitleEl?.addEventListener('click', enterEditMode)
+    musicTitleEl?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterEditMode() }
     })
     nameInputEl?.addEventListener('blur', commitName)
     nameInputEl?.addEventListener('keydown', e => {
