@@ -48,16 +48,46 @@
     <!-- Demo mode banner -->
     <div class="demo-banner" id="demoBanner" hidden>
       <span class="demo-banner__label">DEMO MODE</span>
-      <span class="demo-banner__hint" id="demoBannerHint">Listening to your dropped files</span>
-      <button class="demo-banner__share" id="demoBannerShare" hidden aria-label="Share demo session">Share</button>
-      <button class="demo-banner__exit" id="demoBannerExit" aria-label="Exit demo mode">&#x2715;</button>
+      <span class="demo-banner__hint" id="demoBannerHint"
+        >Listening to your dropped files</span
+      >
+      <button
+        class="demo-banner__share"
+        id="demoBannerShare"
+        hidden
+        aria-label="Share demo session"
+      >
+        Share
+      </button>
+      <button
+        class="demo-banner__exit"
+        id="demoBannerExit"
+        aria-label="Exit demo mode"
+      >
+        &#x2715;
+      </button>
     </div>
 
     <!-- Share modal (host/sender) -->
-    <div class="share-modal" id="shareModal" hidden role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+    <div
+      class="share-modal"
+      id="shareModal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="shareModalTitle"
+    >
       <div class="share-modal__box">
-        <button class="share-modal__close" id="shareModalClose" aria-label="Close">&#x2715;</button>
-        <h2 class="share-modal__title" id="shareModalTitle">Share DEMO Session</h2>
+        <button
+          class="share-modal__close"
+          id="shareModalClose"
+          aria-label="Close"
+        >
+          &#x2715;
+        </button>
+        <h2 class="share-modal__title" id="shareModalTitle">
+          Share DEMO Session
+        </h2>
         <p class="share-modal__album-name" id="shareStep2AlbumName"></p>
 
         <!-- Active session: room code, QR, URL, status, progress -->
@@ -75,35 +105,65 @@
             </div>
             <span class="share-modal__pct" id="shareProgressLabel">0%</span>
           </div>
-          <p class="share-modal__shared-count" id="shareSessionCount" hidden></p>
+          <p
+            class="share-modal__shared-count"
+            id="shareSessionCount"
+            hidden
+          ></p>
         </div>
 
         <!-- Completion: peer count + share again -->
         <div class="share-modal__step" id="shareCompleteState" hidden>
           <p class="share-modal__shared-count" id="shareSharedCount"></p>
-          <button class="btn btn--primary share-modal__continue" id="shareAgainBtn">Share again</button>
+          <button
+            class="btn btn--primary share-modal__continue"
+            id="shareAgainBtn"
+          >
+            Share again
+          </button>
         </div>
       </div>
     </div>
 
     <!-- Incoming session overlay (receiver) -->
-    <div class="incoming-session" id="incomingSession" hidden role="dialog" aria-modal="true" aria-labelledby="incomingSessionTitle">
+    <div
+      class="incoming-session"
+      id="incomingSession"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="incomingSessionTitle"
+    >
       <div class="incoming-session__box">
-        <h2 class="incoming-session__title" id="incomingSessionTitle">Incoming DEMO Session</h2>
+        <h2 class="incoming-session__title" id="incomingSessionTitle">
+          Incoming DEMO Session
+        </h2>
         <p class="incoming-session__album" id="incomingAlbum" hidden></p>
         <p class="incoming-session__code" id="incomingCode"></p>
-        <p class="incoming-session__hint">Someone wants to share their audio files with you.</p>
+        <p class="incoming-session__hint">
+          Someone wants to share their audio files with you.
+        </p>
         <div class="incoming-session__actions" id="incomingActions">
           <button class="btn btn--primary" id="incomingAccept">Accept</button>
-          <button class="incoming-session__decline" id="incomingDecline">Decline</button>
+          <button class="incoming-session__decline" id="incomingDecline">
+            Decline
+          </button>
         </div>
-        <button class="incoming-session__cancel" id="incomingCancel" hidden>Cancel</button>
+        <button class="incoming-session__cancel" id="incomingCancel" hidden>
+          Cancel
+        </button>
         <p class="incoming-session__status" id="incomingStatus"></p>
-        <div class="incoming-session__progress" id="incomingProgressWrap" hidden>
+        <div
+          class="incoming-session__progress"
+          id="incomingProgressWrap"
+          hidden
+        >
           <div class="incoming-session__bar">
             <div class="incoming-session__fill" id="incomingProgressFill"></div>
           </div>
-          <span class="incoming-session__pct" id="incomingProgressLabel">0%</span>
+          <span class="incoming-session__pct" id="incomingProgressLabel"
+            >0%</span
+          >
         </div>
       </div>
     </div>
@@ -111,9 +171,19 @@
     <!-- Drop overlay -->
     <div class="drop-overlay" id="dropOverlay" hidden>
       <div class="drop-overlay__inner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="48" height="48">
-          <path d="M12 16V8m0 0-3 3m3-3 3 3"/>
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+          width="48"
+          height="48"
+        >
+          <path d="M12 16V8m0 0-3 3m3-3 3 3" />
+          <rect x="3" y="3" width="18" height="18" rx="2" />
         </svg>
         <p>Drop audio files to listen</p>
       </div>
@@ -170,19 +240,72 @@
         <div class="music-header">
           <div class="music-header__text">
             <div class="music-header__title-row">
-              <h2 class="section-title music-header__title" id="musicSectionTitle">Music</h2>
-              <input class="music-header__name-input" id="musicNameInput" hidden type="text" maxlength="50" autocomplete="off" spellcheck="false" aria-label="Edit album name">
-              <button class="music-header__edit-btn" id="musicEditNameBtn" hidden aria-label="Edit album name">
-                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              <h2
+                class="section-title music-header__title"
+                id="musicSectionTitle"
+              >
+                Music
+              </h2>
+              <input
+                class="music-header__name-input"
+                id="musicNameInput"
+                hidden
+                type="text"
+                maxlength="50"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Edit album name"
+              />
+              <button
+                class="music-header__edit-btn"
+                id="musicEditNameBtn"
+                hidden
+                aria-label="Edit album name"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
               </button>
             </div>
             <p class="section-subtitle" id="musicSectionSubtitle" hidden></p>
           </div>
           <div class="music-header__art-area" id="musicArtArea" hidden>
-            <input type="file" id="musicArtInput" accept="image/jpeg,image/png,image/webp" hidden aria-hidden="true">
-            <div class="music-header__art-drop" id="musicArtDrop" tabindex="0" role="button" aria-label="Upload album art">
+            <input
+              type="file"
+              id="musicArtInput"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              aria-hidden="true"
+            />
+            <div
+              class="music-header__art-drop"
+              id="musicArtDrop"
+              tabindex="0"
+              role="button"
+              aria-label="Upload album art"
+            >
               <span class="music-header__art-placeholder">Drop album art</span>
-              <img class="music-header__art-img" id="musicAlbumArt" hidden alt="Album art">
+              <img
+                class="music-header__art-img"
+                id="musicAlbumArt"
+                hidden
+                alt="Album art"
+              />
             </div>
           </div>
         </div>
@@ -407,13 +530,27 @@
             upheaval.
           </p>
           <p>
-            Operating entirely from a bedroom studio, the project utilizes the
-            digital landscapes of Suno tracks as a canvas to dissect pain,
-            memory, and endurance. That digital foundation is met with absolute
-            physical force: punishing, duplicated guitar tracks stacked into a
-            massive wall of sound, anchored by heavy, hand-recorded basslines.
-            Killing Freud bridges the gap between human scars and digital
-            experimentation—turning heavy music into a weapon for survival.
+            Operating entirely from a bedroom studio, the project’s journey
+            began with its earliest albums recorded on GarageBand, featuring
+            human-played instrument tracks over virtual drums. That foundation
+            evolved dramatically with the album
+            <strong>Shattering Souls</strong>, which plunged into the depths of
+            AI experimentation. The record features deeply personal, handwritten
+            lyrics navigating pain, memory, relationship fractures and
+            endurance. It uses Suno to provide the vocals needed to bring those
+            raw emotions to life. After countless hours spent meticulously
+            tweaking prompts to forge the ideal backing tracks, that artificial
+            foundation was met with absolute human force: punishing, duplicated
+            guitar layers stacked into a massive wall of sound, on some tracks
+            also anchored by heavy, hand-recorded basslines. Here Killing Freud
+            merged human scars with digital innovation, transforming heavy
+            tracks into a shield for survival. The upcoming chapter, dropping in
+            late 2026, marks a creative turning point. Fully produced in Logic
+            Pro, the new album steps away from AI generation to reclaim a purely
+            organic workflow, with every single instrument (minus the drums)
+            played entirely by hand. By stripping away the lyrics completely,
+            this record channels all its energy into raw guitar work, tonal
+            experimentation and melody.
           </p>
           <p>
             Killing Freud is the personal project of Mr. Bert (Alberto
@@ -427,8 +564,8 @@
             albums on Spotify, YouTube, and all major digital music platforms.
           </p>
           <p>
-            Three letters. One mission: forge the noise, face the wreckage,
-            shatter the walls that imprison your soul.
+            Killing Freud's vision: forge the noise, face the wreckage, shatter
+            the walls that imprison your soul.
           </p>
         </div>
         <div class="about__visual">

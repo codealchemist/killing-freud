@@ -440,7 +440,9 @@ input[type='range'] {
   line-height: 1;
   margin-bottom: 10px;
   border-bottom: 2px dotted var(--text-muted);
-  transition: border-color var(--transition), color var(--transition);
+  transition:
+    border-color var(--transition),
+    color var(--transition);
 }
 
 .music-header__title.is-editable::after {
@@ -585,8 +587,7 @@ input[type='range'] {
   /* Album art as player background on mobile */
   .player.has-art {
     background-image:
-      linear-gradient(rgba(8, 8, 8, 0.80), rgba(8, 8, 8, 0.80)),
-      var(--player-art);
+      linear-gradient(rgba(8, 8, 8, 0.8), rgba(8, 8, 8, 0.8)), var(--player-art);
     background-size: cover;
     background-position: center;
   }
@@ -991,6 +992,11 @@ input[type='range'] {
   background: var(--surface);
   border-top: 1px solid rgba(122, 138, 138, 0.12);
   border-bottom: 1px solid rgba(122, 138, 138, 0.12);
+}
+
+.about strong {
+  font-weight: bold;
+  color: var(--text);
 }
 
 .about__grid {
@@ -1622,7 +1628,9 @@ cite {
   color: #fff;
   cursor: pointer;
   background: none;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .demo-banner__exit:hover {
@@ -1681,7 +1689,9 @@ cite {
   color: #fff;
   cursor: pointer;
   background: none;
-  transition: background var(--transition), border-color var(--transition);
+  transition:
+    background var(--transition),
+    border-color var(--transition);
 }
 
 .demo-banner__share:hover {
@@ -1958,7 +1968,9 @@ cite {
   cursor: pointer;
   background: none;
   border: 2px solid transparent;
-  transition: color var(--transition), border-color var(--transition);
+  transition:
+    color var(--transition),
+    border-color var(--transition);
 }
 
 .incoming-session__decline:hover {
@@ -1982,7 +1994,9 @@ cite {
   background: none;
   border: 1px solid var(--border);
   border-radius: 2px;
-  transition: color var(--transition), border-color var(--transition);
+  transition:
+    color var(--transition),
+    border-color var(--transition);
 }
 
 .incoming-session__cancel:hover {
