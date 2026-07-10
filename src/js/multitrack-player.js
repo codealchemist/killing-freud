@@ -4,7 +4,8 @@
 let _createDefaultTrackSwitch = null
 async function loadTrackswitch() {
   if (!_createDefaultTrackSwitch) {
-    ;({ createDefaultTrackSwitch: _createDefaultTrackSwitch } = await import('trackswitch'))
+    ;({ createDefaultTrackSwitch: _createDefaultTrackSwitch } =
+      await import('trackswitch'))
   }
   return _createDefaultTrackSwitch
 }
@@ -48,6 +49,7 @@ export class MultitrackPlayer {
     this._blobUrls = new Map() // trackId -> objectURL
     this._onTrackStateChange = null
     this._onError = null
+    this._onRemoveTrack = null
   }
 
   onTrackStateChange(cb) {
@@ -58,6 +60,40 @@ export class MultitrackPlayer {
   onError(cb) {
     this._onError = cb
     return this
+  }
+
+  onRemoveTrack(cb) {
+    this._onRemoveTrack = cb
+    return this
+  }
+
+  // Called at the end of load(). Idempotent — skips rows that already have
+  // a button — since load() can run repeatedly as tracks are added/removed.
+  //
+  // Rows carry `data-track-index` matching the trackGroup array order,
+  // which is the same order as `this._tracks`.
+  injectRemoveButtons() {
+    if (!this._onRemoveTrack) return
+    this._root.querySelectorAll('li.track[data-track-index]').forEach(row => {
+      if (row.querySelector('.track-remove-control')) return
+      const track = this._tracks[Number(row.dataset.trackIndex)]
+      if (!track) return
+
+      const btn = document.createElement('button')
+      btn.type = 'button'
+      btn.className = 'track-remove-control'
+      btn.setAttribute('aria-label', `Remove ${track.name}`)
+      btn.title = 'Remove track'
+      btn.textContent = '✕'
+      btn.addEventListener('click', e => {
+        e.preventDefault()
+        e.stopPropagation()
+        this._onRemoveTrack(track.id)
+      })
+
+      const target = row.querySelector('.track-mix-controls') || row
+      target.appendChild(btn)
+    })
   }
 
   _buildInit(tracks) {
@@ -88,7 +124,12 @@ export class MultitrackPlayer {
       features: FEATURES,
       ui: [
         { type: 'trackGroup', trackGroup },
-        { type: 'waveform', height: 72, waveformSource: 'audible', playbackFollowMode: 'center' }
+        {
+          type: 'waveform',
+          height: 72,
+          waveformSource: 'audible',
+          playbackFollowMode: 'center'
+        }
       ]
     }
   }
@@ -103,7 +144,8 @@ export class MultitrackPlayer {
         this._controller = createDefaultTrackSwitch(this._root, init)
         this._controller.on('trackState', ({ index, state }) => {
           const track = this._tracks[index]
-          if (track && this._onTrackStateChange) this._onTrackStateChange(track.id, state)
+          if (track && this._onTrackStateChange)
+            this._onTrackStateChange(track.id, state)
         })
         this._controller.on('error', ({ message }) => {
           if (this._onError) this._onError(new Error(message))
@@ -115,6 +157,8 @@ export class MultitrackPlayer {
     } catch (err) {
       if (this._onError) this._onError(err)
     }
+
+    this.injectRemoveButtons()
   }
 
   destroy() {

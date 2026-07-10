@@ -13,24 +13,25 @@ export function initMultitrack() {
   const section = document.getElementById('multitrack')
   if (!section) return null
 
-  const listView      = document.getElementById('multitrackList')
-  const sessionsGrid   = document.getElementById('multitrackSessions')
-  const emptyEl        = document.getElementById('multitrackEmpty')
-  const newBtn         = document.getElementById('multitrackNewBtn')
+  const listView = document.getElementById('multitrackList')
+  const sessionsGrid = document.getElementById('multitrackSessions')
+  const emptyEl = document.getElementById('multitrackEmpty')
+  const newBtn = document.getElementById('multitrackNewBtn')
 
-  const editorView     = document.getElementById('multitrackEditor')
-  const backBtn        = document.getElementById('multitrackBackBtn')
-  const nameEl         = document.getElementById('multitrackSessionName')
-  const nameInput      = document.getElementById('multitrackNameInput')
-  const editNameBtn    = document.getElementById('multitrackEditNameBtn')
-  const deleteBtn      = document.getElementById('multitrackDeleteBtn')
-  const fileInput      = document.getElementById('multitrackFileInput')
-  const dropZone       = document.getElementById('multitrackDropZone')
-  const playerRoot     = document.getElementById('multitrackPlayerRoot')
-  const editorEmpty    = document.getElementById('multitrackEditorEmpty')
+  const editorView = document.getElementById('multitrackEditor')
+  const backBtn = document.getElementById('multitrackBackBtn')
+  const nameEl = document.getElementById('multitrackSessionName')
+  const nameInput = document.getElementById('multitrackNameInput')
+  const editNameBtn = document.getElementById('multitrackEditNameBtn')
+  const deleteBtn = document.getElementById('multitrackDeleteBtn')
+  const fileInput = document.getElementById('multitrackFileInput')
+  const dropZone = document.getElementById('multitrackDropZone')
+  const playerRoot = document.getElementById('multitrackPlayerRoot')
+  const editorEmpty = document.getElementById('multitrackEditorEmpty')
 
   let player = null
   let currentSession = null
+  let currentTracks = []
 
   async function renderList() {
     const sessions = await MTStorage.listSessions()
@@ -49,7 +50,10 @@ export function initMultitrack() {
       `
       card.addEventListener('click', () => openSession(session.id))
       card.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openSession(session.id) }
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          openSession(session.id)
+        }
       })
       sessionsGrid.appendChild(card)
     })
@@ -74,11 +78,20 @@ export function initMultitrack() {
     player?.destroy()
     player = null
     currentSession = null
+    currentTracks = []
     renderList()
+  }
+
+  async function removeTrack(trackId) {
+    const track = currentTracks.find(t => t.id === trackId)
+    if (!currentSession || !track) return
+    await MTStorage.removeTrackFromSession(currentSession.id, trackId)
+    await refreshPlayer()
   }
 
   async function refreshPlayer() {
     const tracks = await MTStorage.getSessionTracks(currentSession.id)
+    currentTracks = tracks
     editorEmpty.hidden = tracks.length > 0
     playerRoot.hidden = tracks.length === 0
 
@@ -93,7 +106,10 @@ export function initMultitrack() {
       player.onTrackStateChange((trackId, state) => {
         MTStorage.updateTrackState(currentSession.id, trackId, state)
       })
-      player.onError(err => console.warn('Multitrack player error:', err.message))
+      player.onError(err =>
+        console.warn('Multitrack player error:', err.message)
+      )
+      player.onRemoveTrack(trackId => removeTrack(trackId))
     }
 
     await player.load(tracks)
@@ -115,7 +131,12 @@ export function initMultitrack() {
 
   deleteBtn?.addEventListener('click', async () => {
     if (!currentSession) return
-    if (!confirm(`Delete session "${currentSession.name}"? This cannot be undone.`)) return
+    if (
+      !confirm(
+        `Delete session "${currentSession.name}"? This cannot be undone.`
+      )
+    )
+      return
     await MTStorage.deleteSession(currentSession.id)
     closeEditor()
   })
@@ -126,7 +147,10 @@ export function initMultitrack() {
   })
   dropZone?.addEventListener('click', () => fileInput?.click())
   dropZone?.addEventListener('keydown', e => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput?.click() }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      fileInput?.click()
+    }
   })
 
   initInlineEdit({
@@ -143,7 +167,12 @@ export function initMultitrack() {
     const tracks = await MTStorage.getSessionTracks(currentSession.id)
     return {
       name: currentSession.name,
-      tracks: tracks.map(t => ({ id: t.id, name: t.name, size: t.size, blob: t.blob })),
+      tracks: tracks.map(t => ({
+        id: t.id,
+        name: t.name,
+        size: t.size,
+        blob: t.blob
+      })),
       metadata: { trackState: tracks.map(t => t.state) }
     }
   })
@@ -152,9 +181,15 @@ export function initMultitrack() {
 
   return {
     openSession,
-    // Called by the mode-aware document-level drop zone (drop-zone.js) while
-    // `multitrack-mode` is active, so drops anywhere on the page append
-    // tracks to the currently open session instead of replacing it.
-    addDroppedFiles: files => addFiles(files)
+    // Called by the multitrack-section drop zone (drop-zone.js). Creates a
+    // session on the fly if none is open yet, so dropping files on the
+    // section works from the list view too, not just inside an open editor.
+    addDroppedFiles: async files => {
+      if (!currentSession) {
+        const session = await MTStorage.createSession('Untitled Session')
+        await openSession(session.id)
+      }
+      await addFiles(files)
+    }
   }
 }
