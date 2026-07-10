@@ -1,6 +1,16 @@
 import { DemoShare } from './demo-share.js'
 import { renderQR } from './qr.js'
 import { enter, getAlbumName, getAlbumArt } from './demo-mode.js'
+import { importSession as importMultitrackSession } from './multitrack-storage.js'
+
+const MODAL_TITLES = {
+  demo: 'Share DEMO Session',
+  multitrack: 'Share Multitrack Session'
+}
+const INCOMING_TITLES = {
+  demo: 'Incoming DEMO Session',
+  multitrack: 'Incoming Multitrack Session'
+}
 
 function applyArtBackground(el, dataUrl) {
   if (!el || !dataUrl) return
@@ -25,15 +35,38 @@ export function initShareButton(tracks) {
   btn.hidden = false
   btn.addEventListener('click', () => {
     if (!document.getElementById('shareModal')?.hidden) return
-    _openShareModal(tracks)
+    openShareModal({
+      kind: 'demo',
+      tracks,
+      name: getAlbumName(),
+      art: getAlbumArt(),
+      metadata: null
+    })
+  })
+}
+
+// ─── Share button (shown in the multitrack editor) ────────
+
+// `sessionProvider` is called fresh on every click and must resolve to
+// `{ name, tracks, metadata }` for the currently open session, since unlike
+// demo mode, a multitrack session can keep changing after the page loads.
+export function initMultitrackShareButton(sessionProvider) {
+  const btn = document.getElementById('multitrackShareBtn')
+  if (!btn) return
+  btn.addEventListener('click', async () => {
+    if (!document.getElementById('shareModal')?.hidden) return
+    const { name, tracks, metadata } = await sessionProvider()
+    if (!tracks?.length) return
+    openShareModal({ kind: 'multitrack', tracks, name, art: null, metadata })
   })
 }
 
 // ─── Share modal (host/sender) ────────────────────────────
 
-async function _openShareModal(tracks) {
+async function openShareModal({ kind, tracks, name, art, metadata }) {
   const modal              = document.getElementById('shareModal')
   const modalBox           = modal?.querySelector('.share-modal__box')
+  const modalTitleEl       = document.getElementById('shareModalTitle')
   const sessionStateEl     = document.getElementById('shareSessionState')
   const completeStateEl    = document.getElementById('shareCompleteState')
   const canvas             = document.getElementById('shareQr')
@@ -43,7 +76,7 @@ async function _openShareModal(tracks) {
   const progWrap           = document.getElementById('shareProgressWrap')
   const progFill           = document.getElementById('shareProgressFill')
   const progLabel          = document.getElementById('shareProgressLabel')
-  const albumNameEl        = document.getElementById('shareStep2AlbumName')
+  const nameEl              = document.getElementById('shareStep2AlbumName')
   const sharedCountEl      = document.getElementById('shareSharedCount')
   const shareSessionCountEl = document.getElementById('shareSessionCount')
   const shareAgainBtn      = document.getElementById('shareAgainBtn')
@@ -52,12 +85,9 @@ async function _openShareModal(tracks) {
 
   if (!modal) return
 
-  // Album name and art come from the main-view controls, not the modal.
-  const albumName     = getAlbumName()
-  const albumArtDataUrl = getAlbumArt()
-
-  if (albumNameEl) albumNameEl.textContent = albumName
-  applyArtBackground(modalBox, albumArtDataUrl)
+  if (modalTitleEl) modalTitleEl.textContent = MODAL_TITLES[kind] || MODAL_TITLES.demo
+  if (nameEl) nameEl.textContent = name
+  applyArtBackground(modalBox, art)
   modal.hidden = false
 
   let shareUrl = ''
@@ -106,7 +136,7 @@ async function _openShareModal(tracks) {
   modal.addEventListener('click', onBackdropClick)
 
   // startSession creates a fresh WebRTC session using the already-confirmed
-  // albumName. Called once by Continue and again by "Share again".
+  // name. Called once by Continue and again by "Share again".
   const startSession = async () => {
     cancelAnimationFrame(_sendRafId)
     _sendRafId = null
@@ -128,7 +158,7 @@ async function _openShareModal(tracks) {
       .onPeerConnected(async () => {
         status.textContent = 'Peer connected — sending files…'
         try {
-          await share.sendTracks(tracks, albumName, albumArtDataUrl)
+          await share.sendTracks(tracks, { kind, name, art, metadata })
           sharedCount++
           updateCount()
           sessionStateEl.hidden = true
@@ -153,7 +183,7 @@ async function _openShareModal(tracks) {
 
     try {
       const { roomId } = await share.startAsHost()
-      shareUrl = `${location.origin}${location.pathname}?demo-share=${roomId}&album=${encodeURIComponent(albumName)}`
+      shareUrl = `${location.origin}${location.pathname}?share=${roomId}&kind=${kind}&name=${encodeURIComponent(name)}`
       if (codeEl) codeEl.textContent = roomId
       await renderQR(canvas, shareUrl)
       urlEl.textContent = shareUrl
@@ -172,29 +202,31 @@ async function _openShareModal(tracks) {
 
 // ─── Incoming session overlay (receiver) ──────────────────
 
-export async function initIncomingSession(roomId, albumName) {
-  const overlay    = document.getElementById('incomingSession')
-  const overlayBox = overlay?.querySelector('.incoming-session__box')
-  const codeEl     = document.getElementById('incomingCode')
-  const albumEl    = document.getElementById('incomingAlbum')
-  const actionsEl  = document.getElementById('incomingActions')
-  const acceptBtn  = document.getElementById('incomingAccept')
-  const declineBtn = document.getElementById('incomingDecline')
-  const cancelBtn  = document.getElementById('incomingCancel')
-  const status     = document.getElementById('incomingStatus')
-  const progWrap   = document.getElementById('incomingProgressWrap')
-  const progFill   = document.getElementById('incomingProgressFill')
-  const progLabel  = document.getElementById('incomingProgressLabel')
+export async function initIncomingSession(roomId, kind = 'demo', name) {
+  const overlay      = document.getElementById('incomingSession')
+  const overlayBox   = overlay?.querySelector('.incoming-session__box')
+  const overlayTitle = document.getElementById('incomingSessionTitle')
+  const codeEl       = document.getElementById('incomingCode')
+  const nameEl       = document.getElementById('incomingAlbum')
+  const actionsEl    = document.getElementById('incomingActions')
+  const acceptBtn    = document.getElementById('incomingAccept')
+  const declineBtn   = document.getElementById('incomingDecline')
+  const cancelBtn    = document.getElementById('incomingCancel')
+  const status       = document.getElementById('incomingStatus')
+  const progWrap     = document.getElementById('incomingProgressWrap')
+  const progFill     = document.getElementById('incomingProgressFill')
+  const progLabel    = document.getElementById('incomingProgressLabel')
 
   if (!overlay) return
   overlay.hidden = false
+  if (overlayTitle) overlayTitle.textContent = INCOMING_TITLES[kind] || INCOMING_TITLES.demo
   if (codeEl) codeEl.textContent = roomId
-  if (albumEl && albumName) {
-    albumEl.textContent = albumName
-    albumEl.hidden = false
+  if (nameEl && name) {
+    nameEl.textContent = name
+    nameEl.hidden = false
   }
 
-  // Clean the URL so a reload after entering demo mode won't retrigger
+  // Clean the URL so a reload after accepting won't retrigger
   const cleanUrl = `${location.origin}${location.pathname}`
   history.replaceState(null, '', cleanUrl)
 
@@ -245,15 +277,25 @@ export async function initIncomingSession(roomId, albumName) {
           status.textContent = 'Receiving files…'
         })
       })
-      .onComplete(async (albumName, albumArt) => {
+      .onComplete(async (recvKind, recvName, recvArt, recvMetadata) => {
         cancelAnimationFrame(_recvRafId)
         _recvRafId = null
         cancelBtn.hidden = true
-        status.textContent = 'Done! Opening player…'
+        status.textContent = 'Done! Opening…'
         progFill.style.width = '100%'
         progLabel.textContent = '100%'
         await new Promise(r => setTimeout(r, 800))
-        await enter(receivedFiles, albumName, true, albumArt)
+
+        if (recvKind === 'multitrack') {
+          const session = await importMultitrackSession(recvName, receivedFiles, recvMetadata)
+          const url = new URL(`${location.origin}${location.pathname}`)
+          url.searchParams.set('open-session', session.id)
+          url.hash = 'multitrack'
+          location.href = url.toString()
+          return
+        }
+
+        await enter(receivedFiles, recvName, true, recvArt)
         // enter() calls location.reload() — page ends here
       })
       .onError(err => {

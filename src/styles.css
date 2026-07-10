@@ -2039,3 +2039,263 @@ cite {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
+
+/* ===========================
+   Multitrack Section
+   =========================== */
+.multitrack-section {
+  padding: 100px 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+}
+
+/* ── Session list ─────────────────────────────────────── */
+.multitrack-list__header {
+  margin-bottom: 32px;
+}
+
+.trackswitch .main-control {
+  border: 1px solid var(--text);
+}
+
+.multitrack-list__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.multitrack-list__empty {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  padding: 24px 0;
+  letter-spacing: 0.05em;
+}
+
+.multitrack-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition:
+    background var(--transition),
+    border-color var(--transition);
+}
+
+.multitrack-card:hover,
+.multitrack-card:focus-visible {
+  background: var(--surface-2);
+  border-color: var(--accent);
+  outline: none;
+}
+
+.multitrack-card__name {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  text-transform: uppercase;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multitrack-card__meta {
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Editor ────────────────────────────────────────────── */
+.multitrack-editor__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.multitrack-editor__back {
+  flex-basis: 100%;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 18px;
+  transition: color var(--transition);
+}
+
+.multitrack-editor__back:hover {
+  color: var(--accent-hover);
+}
+
+.multitrack-editor__title-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.multitrack-editor__name {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  margin: 0;
+  line-height: 1;
+}
+
+.multitrack-editor__name.is-editable {
+  cursor: pointer;
+  border-bottom: 2px dotted var(--text-muted);
+  transition:
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.multitrack-editor__name.is-editable:hover {
+  color: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.multitrack-editor__name-input {
+  font-family: var(--font-heading);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  outline: none;
+  padding: 0;
+  line-height: 1;
+  flex: 1;
+}
+
+.multitrack-editor__edit-btn {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color var(--transition);
+}
+
+.multitrack-editor__edit-btn:hover {
+  color: var(--accent-hover);
+}
+
+.multitrack-editor__actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.multitrack-editor__share,
+.multitrack-editor__delete {
+  padding: 9px 20px;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    border-color var(--transition),
+    background var(--transition);
+}
+
+.multitrack-editor__share:hover {
+  color: var(--accent-hover);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.multitrack-editor__delete:hover {
+  color: #d97a7a;
+  border-color: #d97a7a;
+}
+
+.multitrack-editor__drop {
+  border: 1px dashed var(--border);
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.multitrack-editor__drop:hover,
+.multitrack-editor__drop:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent-hover);
+  outline: none;
+}
+
+.multitrack-editor__player {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 4px;
+}
+
+.trackswitch.trackswitch {
+  margin: 0;
+  padding: 0;
+}
+
+.multitrack-editor__empty {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  padding: 24px 0;
+  letter-spacing: 0.05em;
+}
+
+/* ── trackswitch.js dark theme ────────────────────────────
+   trackswitch renders into this container as plain light-DOM markup (no
+   shadow root when using the createDefaultTrackSwitch factory API), and
+   every color it draws with reads from these --ts-color-* custom
+   properties — so overriding them here on the mount's ancestor is enough
+   to retheme the whole widget without fighting its internal CSS. */
+.multitrack-editor__player {
+  --ts-color-surface-base: var(--surface);
+  --ts-color-text-primary: var(--text);
+  --ts-color-text-secondary: var(--text);
+  --ts-color-accent: var(--accent-hover);
+}
+
+.trackswitch li.track:not(.tabs):nth-child(2n) {
+  --ts-track-row-bg: var(--surface);
+}
+
+.trackswitch li.track {
+  --ts-track-row-bg: var(--surface);
+  border-bottom: 1px solid var(--text) !important;
+}
+
+.trackswitch .waveform-wrap .seekwrap {
+  --seekhead-color: var(--text);
+}

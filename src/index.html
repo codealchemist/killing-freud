@@ -199,6 +199,7 @@
         <li><a href="#lyrics">Lyrics</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#gallery">Gallery</a></li>
+        <li><a href="#multitrack">Multitrack</a></li>
         <li><a href="#sharing">Sharing</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
@@ -631,6 +632,117 @@
         <button class="lightbox__next" id="lightboxNext" aria-label="Next">
           &#8250;
         </button>
+      </div>
+    </section>
+
+    <!-- Multitrack Editor -->
+    <section class="multitrack-section" id="multitrack">
+      <div class="container">
+        <h2 class="section-title">Multitrack</h2>
+        <p class="section-subtitle">
+          Drop audio files to build a synced multitrack session — solo, mute,
+          and mix each track, then share the whole session.
+        </p>
+
+        <!-- Session list -->
+        <div class="multitrack-list" id="multitrackList">
+          <div class="multitrack-list__header">
+            <button class="btn btn--primary" id="multitrackNewBtn">
+              New Session
+            </button>
+          </div>
+          <div class="multitrack-list__grid" id="multitrackSessions"></div>
+          <p class="multitrack-list__empty" id="multitrackEmpty" hidden>
+            No sessions yet. Create one, or drop audio files anywhere on the
+            page to get started.
+          </p>
+        </div>
+
+        <!-- Editor -->
+        <div class="multitrack-editor" id="multitrackEditor" hidden>
+          <div class="multitrack-editor__header">
+            <button
+              class="multitrack-editor__back"
+              id="multitrackBackBtn"
+              aria-label="Back to sessions"
+            >
+              &#8249; Sessions
+            </button>
+            <div class="multitrack-editor__title-row">
+              <h3 class="multitrack-editor__name" id="multitrackSessionName"></h3>
+              <input
+                class="multitrack-editor__name-input"
+                id="multitrackNameInput"
+                hidden
+                type="text"
+                maxlength="60"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Edit session name"
+              />
+              <button
+                class="multitrack-editor__edit-btn"
+                id="multitrackEditNameBtn"
+                aria-label="Edit session name"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div class="multitrack-editor__actions">
+              <button
+                class="multitrack-editor__share"
+                id="multitrackShareBtn"
+              >
+                Share
+              </button>
+              <button
+                class="multitrack-editor__delete"
+                id="multitrackDeleteBtn"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+
+          <input
+            type="file"
+            id="multitrackFileInput"
+            accept="audio/*"
+            multiple
+            hidden
+          />
+          <div
+            class="multitrack-editor__drop"
+            id="multitrackDropZone"
+            tabindex="0"
+            role="button"
+            aria-label="Add tracks"
+          >
+            <span>Drop audio files anywhere, or click to add tracks</span>
+          </div>
+
+          <div class="multitrack-editor__player" id="multitrackPlayerRoot" hidden></div>
+          <p class="multitrack-editor__empty" id="multitrackEditorEmpty">
+            No tracks yet — drop audio files to add the first one.
+          </p>
+        </div>
       </div>
     </section>
 

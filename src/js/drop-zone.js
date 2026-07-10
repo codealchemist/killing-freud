@@ -1,13 +1,19 @@
 import { enter } from './demo-mode.js'
 
-export function initDropZone() {
+export function initDropZone({ onMultitrackDrop } = {}) {
   const overlay = document.getElementById('dropOverlay')
+  const overlayText = overlay?.querySelector('p')
   let dragDepth = 0
 
   document.addEventListener('dragenter', e => {
     e.preventDefault()
     dragDepth++
     if (overlay && dragDepth === 1) {
+      const isMultitrack = document.body.classList.contains('multitrack-mode')
+      if (overlayText)
+        overlayText.textContent = isMultitrack
+          ? 'Drop audio files to add tracks'
+          : 'Drop audio files to listen'
       // In demo mode the album art drop target sits above the player, in the
       // music header — keep it clear of the scrim so it stays usable.
       const player = document.body.classList.contains('demo-mode')
@@ -37,6 +43,11 @@ export function initDropZone() {
       f.type.startsWith('audio/')
     )
     if (!files.length) return
+
+    if (document.body.classList.contains('multitrack-mode') && onMultitrackDrop) {
+      await onMultitrackDrop(files)
+      return
+    }
 
     await enter(files)
   })
