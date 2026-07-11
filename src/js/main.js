@@ -6,6 +6,7 @@ import { version } from '../../package.json'
 import * as DemoMode from './demo-mode.js'
 import { initDropZone } from './drop-zone.js'
 import { initShareButton, initIncomingSession } from './demo-share-ui.js'
+import { initMultitrack } from './multitrack-ui.js'
 
 // ─── Service Worker (PWA + offline) ───────────────────────
 if ('serviceWorker' in navigator) {
@@ -95,8 +96,19 @@ if (yearEl) yearEl.textContent = new Date().getFullYear()
 const versionEl = document.getElementById('footerVersion')
 if (versionEl) versionEl.textContent = `v${version}`
 
+// ─── Multitrack editor ─────────────────────────────────────
+const multitrack = initMultitrack()
+
 // ─── Drop zone (always active) ────────────────────────────
-initDropZone()
+initDropZone({ onMultitrackDrop: multitrack?.addDroppedFiles })
+
+// ─── Open a shared/received multitrack session, if requested ──
+const _sessionQs = new URLSearchParams(location.search)
+const openSessionId = _sessionQs.get('open-session')
+if (openSessionId && multitrack) {
+  multitrack.openSession(openSessionId)
+  history.replaceState(null, '', `${location.origin}${location.pathname}#multitrack`)
+}
 
 // ─── Demo mode banner ─────────────────────────────────────
 const demoBanner = document.getElementById('demoBanner')
@@ -213,12 +225,15 @@ if (DemoMode.isActive() && demoBanner) {
 
 // ─── Incoming share session (detected on any page load) ───
 const _qs = new URLSearchParams(location.search)
-const shareParam = _qs.get('demo-share')
+// `share`+`kind` is the current protocol; `demo-share`+`album` is kept as a
+// legacy alias so already-generated demo links (kind is always 'demo') don't 404.
+const shareParam = _qs.get('share') || _qs.get('demo-share')
 if (shareParam) {
+  const kind = _qs.get('kind') || 'demo'
   // Strip control characters and cap length; textContent handles the rest
-  const rawAlbum = _qs.get('album') ?? ''
-  const albumParam = rawAlbum.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 50)
-  initIncomingSession(shareParam, albumParam || undefined)
+  const rawName = _qs.get('name') ?? _qs.get('album') ?? ''
+  const nameParam = rawName.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 60)
+  initIncomingSession(shareParam, kind, nameParam || undefined)
 }
 
 // ─── Audio Player ──────────────────────────────────────────

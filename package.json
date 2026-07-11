@@ -1,6 +1,6 @@
 {
   "name": "killing-freud",
-  "version": "1.7.14",
+  "version": "1.8.2",
   "description": "Killing Freud website",
   "keywords": [
     "Killing Freud",
@@ -26,8 +26,11 @@
   },
   "devDependencies": {
     "@netlify/blobs": "^8.1.0",
+    "netlify-cli": "^17.0.0",
     "qrcode": "^1.5.4",
-    "vite": "^6.0.0",
-    "netlify-cli": "^17.0.0"
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "trackswitch": "^2.0.1"
   }
 }

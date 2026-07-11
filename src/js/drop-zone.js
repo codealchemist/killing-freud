@@ -1,43 +1,83 @@
 import { enter } from './demo-mode.js'
 
-export function initDropZone() {
-  const overlay = document.getElementById('dropOverlay')
+function initSectionDropZone({ container, overlay, overlayText, message, onDrop }) {
+  if (!container || !overlay) return
   let dragDepth = 0
 
-  document.addEventListener('dragenter', e => {
+  const showOverlay = () => {
+    const rect = container.getBoundingClientRect()
+    overlay.style.top = `${rect.top}px`
+    overlay.style.left = `${rect.left}px`
+    overlay.style.width = `${rect.width}px`
+    overlay.style.height = `${rect.height}px`
+    if (overlayText) overlayText.textContent = message
+    overlay.hidden = false
+  }
+
+  const hideOverlay = () => {
+    overlay.hidden = true
+  }
+
+  container.addEventListener('dragenter', e => {
     e.preventDefault()
     dragDepth++
-    if (overlay && dragDepth === 1) {
-      // In demo mode the album art drop target sits above the player, in the
-      // music header — keep it clear of the scrim so it stays usable.
-      const player = document.body.classList.contains('demo-mode')
-        ? document.querySelector('.player')
-        : null
-      overlay.style.top = player ? `${player.getBoundingClientRect().top}px` : ''
-      overlay.hidden = false
+    if (dragDepth === 1) showOverlay()
+  })
+
+  container.addEventListener('dragleave', () => {
+    dragDepth--
+    if (dragDepth <= 0) {
+      dragDepth = 0
+      hideOverlay()
     }
   })
 
-  document.addEventListener('dragleave', () => {
-    dragDepth--
-    if (overlay && dragDepth === 0) overlay.hidden = true
-  })
-
-  document.addEventListener('dragover', e => {
+  container.addEventListener('dragover', e => {
     e.preventDefault()
     if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy'
   })
 
-  document.addEventListener('drop', async e => {
+  container.addEventListener('drop', async e => {
     e.preventDefault()
     dragDepth = 0
-    if (overlay) overlay.hidden = true
+    hideOverlay()
 
     const files = Array.from(e.dataTransfer?.files ?? []).filter(f =>
       f.type.startsWith('audio/')
     )
     if (!files.length) return
 
-    await enter(files)
+    await onDrop(files)
+  })
+}
+
+export function initDropZone({ onMultitrackDrop } = {}) {
+  const overlay = document.getElementById('dropOverlay')
+  const overlayText = overlay?.querySelector('p')
+
+  // Safety net: outside the hero/multitrack zones below, still swallow the
+  // event so the browser doesn't navigate away to display the dropped file.
+  document.addEventListener('dragover', e => e.preventDefault())
+  document.addEventListener('drop', e => e.preventDefault())
+
+  // Hero section: dropping files here always starts demo mode, regardless
+  // of whether a multitrack session happens to be open elsewhere on the page.
+  initSectionDropZone({
+    container: document.getElementById('hero'),
+    overlay,
+    overlayText,
+    message: 'Drop audio files to listen',
+    onDrop: files => enter(files)
+  })
+
+  // Multitrack modal: only receives drag events while open (it's `hidden`
+  // otherwise), so this only ever fires with a session in view. Dropping
+  // here always feeds the multitrack editor, never demo mode.
+  initSectionDropZone({
+    container: document.getElementById('multitrack'),
+    overlay,
+    overlayText,
+    message: 'Drop audio files to add tracks',
+    onDrop: files => onMultitrackDrop?.(files)
   })
 }

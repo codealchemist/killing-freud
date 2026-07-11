@@ -105,8 +105,10 @@ export class DemoShare {
     this._onError = null
     this._onFileReceived = null
     this._onAlbumArt = null
-    this._receivedAlbumName = 'DEMO'
+    this._receivedKind = 'demo'
+    this._receivedName = 'DEMO'
     this._receivedAlbumArt = null
+    this._receivedMetadata = null
   }
 
   // ─── Callback setters (chainable) ─────────────────────────
@@ -234,7 +236,9 @@ export class DemoShare {
 
         if (msg.type === 'MANIFEST') {
           totalBytes = msg.files.reduce((s, f) => s + f.size, 0)
-          this._receivedAlbumName = msg.albumName || 'DEMO'
+          this._receivedKind = msg.kind || 'demo'
+          this._receivedName = msg.name || 'DEMO'
+          this._receivedMetadata = msg.metadata || null
         }
 
         if (msg.type === 'FILE_START') {
@@ -256,7 +260,12 @@ export class DemoShare {
 
         if (msg.type === 'ALL_DONE') {
           if (this._onComplete)
-            this._onComplete(this._receivedAlbumName || 'DEMO', this._receivedAlbumArt)
+            this._onComplete(
+              this._receivedKind,
+              this._receivedName || 'DEMO',
+              this._receivedAlbumArt,
+              this._receivedMetadata
+            )
         }
       } else {
         // Binary chunk
@@ -274,19 +283,21 @@ export class DemoShare {
 
   // ─── File transfer (host calls this after peer connects) ──
 
-  async sendTracks(tracks, albumName = 'DEMO', albumArt = null) {
+  async sendTracks(tracks, { kind = 'demo', name = 'DEMO', art = null, metadata = null } = {}) {
     const dc = this._dc
     if (!dc || dc.readyState !== 'open') throw new Error('DataChannel not open')
 
     const totalBytes = tracks.reduce((s, t) => s + (t.size || 0), 0)
     let sentBytes = 0
 
-    if (albumArt) dc.send(JSON.stringify({ type: 'ALBUM_ART', dataUrl: albumArt }))
+    if (art) dc.send(JSON.stringify({ type: 'ALBUM_ART', dataUrl: art }))
 
     dc.send(
       JSON.stringify({
         type: 'MANIFEST',
-        albumName,
+        kind,
+        name,
+        metadata,
         files: tracks.map(t => ({ id: t.id, name: t.name, size: t.size }))
       })
     )

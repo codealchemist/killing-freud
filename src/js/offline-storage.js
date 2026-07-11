@@ -1,7 +1,10 @@
 const DB_NAME = 'killing-freud-offline'
-const DB_VERSION = 2
+const DB_VERSION = 3
 const STORE = 'tracks'
 const DEMO_STORE = 'demo-tracks'
+const MULTITRACK_SESSIONS_STORE = 'multitrack-sessions'
+const MULTITRACK_TRACKS_STORE = 'multitrack-tracks'
+const MULTITRACK_TRACKS_SESSION_INDEX = 'by_sessionId'
 
 function open() {
   return new Promise((resolve, reject) => {
@@ -12,6 +15,12 @@ function open() {
         db.createObjectStore(STORE, { keyPath: 'id' })
       if (!db.objectStoreNames.contains(DEMO_STORE))
         db.createObjectStore(DEMO_STORE, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(MULTITRACK_SESSIONS_STORE))
+        db.createObjectStore(MULTITRACK_SESSIONS_STORE, { keyPath: 'id' })
+      if (!db.objectStoreNames.contains(MULTITRACK_TRACKS_STORE)) {
+        const store = db.createObjectStore(MULTITRACK_TRACKS_STORE, { keyPath: 'id' })
+        store.createIndex(MULTITRACK_TRACKS_SESSION_INDEX, 'sessionId', { unique: false })
+      }
     }
     req.onsuccess = e => resolve(e.target.result)
     req.onerror = e => reject(e.target.error)
@@ -113,3 +122,7 @@ export async function clearDemoTracks() {
     store.clear()
   })
 }
+
+// ─── Shared internals (reused by multitrack-storage.js) ────
+
+export { open, txOn, MULTITRACK_SESSIONS_STORE, MULTITRACK_TRACKS_STORE, MULTITRACK_TRACKS_SESSION_INDEX }
