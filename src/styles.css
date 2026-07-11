@@ -2068,6 +2068,25 @@ cite {
   overflow-y: auto;
 }
 
+@media (max-width: 640px) {
+  /* Edge-to-edge on mobile — the box fills the fixed, inset:0 modal wrapper
+     exactly, so there's no need for vh units (and the iOS viewport-height
+     quirks that come with them). */
+  .multitrack-modal {
+    padding: 0;
+  }
+
+  .multitrack-modal__box {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    padding: 24px 20px;
+  }
+}
+
 .multitrack-modal__close {
   position: absolute;
   top: 12px;
