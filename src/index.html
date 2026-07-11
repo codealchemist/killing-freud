@@ -635,25 +635,64 @@
       </div>
     </section>
 
-    <!-- Multitrack Editor -->
-    <section class="multitrack-section" id="multitrack">
-      <div class="container">
-        <h2 class="section-title">Multitrack</h2>
-        <p class="section-subtitle">
-          Drop audio files to build a synced multitrack session — solo, mute,
-          and mix each track, then share the whole session.
-        </p>
+    <!-- Multitrack modal -->
+    <div
+      class="multitrack-modal"
+      id="multitrack"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="multitrackModalTitle"
+    >
+      <div class="multitrack-modal__box">
+        <button
+          class="multitrack-modal__close"
+          id="multitrackCloseBtn"
+          aria-label="Close"
+        >
+          &#x2715;
+        </button>
 
         <!-- Session list -->
         <div class="multitrack-list" id="multitrackList">
           <div class="multitrack-list__header">
+            <h2 class="multitrack-modal__title" id="multitrackModalTitle">
+              Load your stems. Streamline your session.
+            </h2>
+            <p class="multitrack-modal__subtitle collapsed">
+              This is a free, web-based multitrack mixer built for musicians,
+              collaborators, and bands who need a quick, hassle-free way to
+              listen to stems together. I originally developed this tool to make
+              remote practice sessions and songwriting adjustments easier with
+              my own musician friends—and now it's open for anyone to use. This
+              tool does not store or pre-load any music. It is a clean,
+              platform-agnostic canvas. Just drag and drop your own audio stems
+              directly into the browser to isolate tracks, mute sections, and
+              run quick practice sessions without needing to fire up a heavy
+              DAW. The open source multitrack player is
+              <a href="https://audiolabs.github.io/trackswitch.js" target="_blank"
+                >trackswitch.js</a
+              >.
+            </p>
+            <p class="multitrack-modal__subtitle collapsed">
+              🔒 Privacy & Storage Note: Your files never touch a cloud server.
+              Audio files are processed entirely within your local browser
+              storage. When you share a session link with a bandmate or
+              collaborator, the file connection is strictly Peer-to-Peer (P2P).
+              The data streams directly between your two browsers, ensuring that
+              absolutely nobody else ever has access to your music.
+            </p>
+            <p class="multitrack-modal__subtitle">
+              Just drop audio files here to build a synced multitrack session —
+              solo, mute, and mix each track, then share the whole session.
+            </p>
             <button class="btn btn--primary" id="multitrackNewBtn">
               New Session
             </button>
           </div>
           <div class="multitrack-list__grid" id="multitrackSessions"></div>
           <p class="multitrack-list__empty" id="multitrackEmpty" hidden>
-            No sessions yet. Create one, or drop audio files on this section to
+            No sessions yet. Create one, or drop audio files on this modal to
             get started.
           </p>
         </div>
@@ -666,7 +705,20 @@
               id="multitrackBackBtn"
               aria-label="Back to sessions"
             >
-              &#8249; Sessions
+              <svg
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M19 12H5" />
+                <path d="M12 19l-7-7 7-7" />
+              </svg>
             </button>
             <div class="multitrack-editor__title-row">
               <h3
@@ -748,7 +800,7 @@
           </p>
         </div>
       </div>
-    </section>
+    </div>
 
     <!-- Sharing -->
     <section class="sharing-section" id="sharing" hidden>

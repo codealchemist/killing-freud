@@ -9,9 +9,44 @@ function escapeHtml(str) {
   return div.innerHTML
 }
 
+// Number of lines a `.collapsed` paragraph shows before truncating. Read by
+// the CSS clamp via the `--collapsed-lines` custom property (see
+// .multitrack-modal__subtitle.collapsed in styles.css).
+const COLLAPSED_LINES = 2
+
+// Clamps every `.multitrack-modal__subtitle.collapsed` paragraph inside
+// `root` to COLLAPSED_LINES and wires up a "Show more/less" toggle after it.
+// Generic over however many such paragraphs exist, so new ones need no JS.
+function initCollapsibleText(root) {
+  root.querySelectorAll('.multitrack-modal__subtitle.collapsed').forEach((p, i) => {
+    p.style.setProperty('--collapsed-lines', COLLAPSED_LINES)
+    if (!p.id) p.id = `multitrackSubtitle${i}`
+
+    const toggle = document.createElement('button')
+    toggle.type = 'button'
+    toggle.className = 'multitrack-modal__subtitle-toggle'
+    toggle.textContent = 'Show more'
+    toggle.setAttribute('aria-expanded', 'false')
+    toggle.setAttribute('aria-controls', p.id)
+    p.insertAdjacentElement('afterend', toggle)
+
+    toggle.addEventListener('click', () => {
+      const expanded = p.classList.toggle('is-expanded')
+      toggle.setAttribute('aria-expanded', String(expanded))
+      toggle.textContent = expanded ? 'Show less' : 'Show more'
+      // Animate to the paragraph's real content height rather than a
+      // guessed cap, so the transition duration matches the actual distance.
+      p.style.maxHeight = expanded ? `${p.scrollHeight}px` : ''
+    })
+  })
+}
+
 export function initMultitrack() {
   const section = document.getElementById('multitrack')
   if (!section) return null
+
+  const navLink = document.querySelector('.nav__links a[href="#multitrack"]')
+  const closeBtn = document.getElementById('multitrackCloseBtn')
 
   const listView = document.getElementById('multitrackList')
   const sessionsGrid = document.getElementById('multitrackSessions')
@@ -59,27 +94,43 @@ export function initMultitrack() {
     })
   }
 
-  async function openSession(id) {
-    currentSession = await MTStorage.getSession(id)
-    if (!currentSession) return
-
-    document.body.classList.add('multitrack-mode')
-    listView.hidden = true
-    editorView.hidden = false
-    nameEl.textContent = currentSession.name
-
-    await refreshPlayer()
-  }
-
-  function closeEditor() {
-    document.body.classList.remove('multitrack-mode')
+  // Swaps the editor view back for the session list, without closing the
+  // modal itself — used by the back arrow and after deleting a session.
+  function backToList() {
     editorView.hidden = true
     listView.hidden = false
+    section.setAttribute('aria-labelledby', 'multitrackModalTitle')
     player?.destroy()
     player = null
     currentSession = null
     currentTracks = []
     renderList()
+  }
+
+  function openModal() {
+    document.body.style.overflow = 'hidden'
+    section.hidden = false
+    renderList()
+  }
+
+  function closeModal() {
+    document.body.style.overflow = ''
+    section.hidden = true
+    backToList()
+  }
+
+  async function openSession(id) {
+    currentSession = await MTStorage.getSession(id)
+    if (!currentSession) return
+
+    document.body.style.overflow = 'hidden'
+    section.hidden = false
+    listView.hidden = true
+    editorView.hidden = false
+    section.setAttribute('aria-labelledby', 'multitrackSessionName')
+    nameEl.textContent = currentSession.name
+
+    await refreshPlayer()
   }
 
   async function removeTrack(trackId) {
@@ -122,12 +173,24 @@ export function initMultitrack() {
     await refreshPlayer()
   }
 
+  navLink?.addEventListener('click', e => {
+    e.preventDefault()
+    openModal()
+  })
+
   newBtn?.addEventListener('click', async () => {
     const session = await MTStorage.createSession('Untitled Session')
     await openSession(session.id)
   })
 
-  backBtn?.addEventListener('click', closeEditor)
+  backBtn?.addEventListener('click', backToList)
+  closeBtn?.addEventListener('click', closeModal)
+  section?.addEventListener('click', e => {
+    if (e.target === section) closeModal()
+  })
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !section.hidden) closeModal()
+  })
 
   deleteBtn?.addEventListener('click', async () => {
     if (!currentSession) return
@@ -138,7 +201,7 @@ export function initMultitrack() {
     )
       return
     await MTStorage.deleteSession(currentSession.id)
-    closeEditor()
+    backToList()
   })
 
   fileInput?.addEventListener('change', e => {
@@ -177,13 +240,15 @@ export function initMultitrack() {
     }
   })
 
+  initCollapsibleText(section)
   renderList()
 
   return {
     openSession,
-    // Called by the multitrack-section drop zone (drop-zone.js). Creates a
-    // session on the fly if none is open yet, so dropping files on the
-    // section works from the list view too, not just inside an open editor.
+    // Called by the multitrack-modal drop zone (drop-zone.js), which only
+    // ever fires while the modal is open. Creates a session on the fly if
+    // none is open yet, so dropping files works from the list view too, not
+    // just inside an open session.
     addDroppedFiles: async files => {
       if (!currentSession) {
         const session = await MTStorage.createSession('Untitled Session')

@@ -2041,17 +2041,135 @@ cite {
 }
 
 /* ===========================
-   Multitrack Section
+   Multitrack Modal
    =========================== */
-.multitrack-section {
-  padding: 100px 0;
-  background: var(--bg);
-  border-top: 1px solid var(--border);
+.multitrack-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 8, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 24px;
+}
+
+.multitrack-modal__box {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+.multitrack-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  line-height: 1;
+  padding: 4px;
+  transition: color var(--transition);
+}
+
+.multitrack-modal__close:hover {
+  color: var(--text);
+}
+
+.multitrack-modal__title {
+  font-family: var(--font-heading);
+  font-size: 1.4rem;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+
+.multitrack-modal__subtitle {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  max-width: 52ch;
+}
+
+.multitrack-modal__subtitle a {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition);
+}
+
+.multitrack-modal__subtitle a:hover,
+.multitrack-modal__subtitle a:focus-visible {
+  color: var(--text);
+  outline: none;
+}
+
+/* Collapsed height is `--collapsed-lines` (set from JS, see
+   initCollapsibleText in multitrack-ui.js) times the line-height above, so
+   the clamp always lands on a whole number of lines. */
+.multitrack-modal__subtitle.collapsed {
+  position: relative;
+  max-height: calc(var(--collapsed-lines, 2) * 1.6em);
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.multitrack-modal__subtitle.collapsed::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1.6em;
+  background: linear-gradient(to bottom, transparent, var(--surface));
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.multitrack-modal__subtitle.collapsed.is-expanded::after {
+  opacity: 0;
+}
+
+.multitrack-modal__subtitle-toggle {
+  display: block;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0 0 16px;
+  font-family: var(--font-heading);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.multitrack-modal__subtitle-toggle:hover,
+.multitrack-modal__subtitle-toggle:focus-visible {
+  color: var(--accent-hover);
+  outline: none;
 }
 
 /* ── Session list ─────────────────────────────────────── */
 .multitrack-list__header {
   margin-bottom: 32px;
+  padding-right: 24px;
 }
 
 .trackswitch .main-control {
@@ -2112,24 +2230,21 @@ cite {
 .multitrack-editor__header {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  gap: 14px;
   margin-bottom: 28px;
+  padding-right: 24px;
 }
 
 .multitrack-editor__back {
-  flex-basis: 100%;
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--text-muted);
-  font-family: var(--font-heading);
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   cursor: pointer;
-  padding: 0;
-  margin-bottom: 18px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
   transition: color var(--transition);
 }
 

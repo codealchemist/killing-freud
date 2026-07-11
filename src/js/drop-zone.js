@@ -70,8 +70,9 @@ export function initDropZone({ onMultitrackDrop } = {}) {
     onDrop: files => enter(files)
   })
 
-  // Multitrack section: dropping files here always feeds the multitrack
-  // editor, never demo mode.
+  // Multitrack modal: only receives drag events while open (it's `hidden`
+  // otherwise), so this only ever fires with a session in view. Dropping
+  // here always feeds the multitrack editor, never demo mode.
   initSectionDropZone({
     container: document.getElementById('multitrack'),
     overlay,
