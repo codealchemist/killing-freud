@@ -1,21 +1,33 @@
 import { cleanName, formatSize } from './utils.js'
 
-export async function initSharing() {
-  let tracks = []
-  try {
-    const res = await fetch('/api/sharing')
-    if (!res.ok) return
-    tracks = await res.json()
-  } catch {
-    return
-  }
+// The whole Sharing panel's copy (title, tagline, intro) per album —
+// src/albums/<slug>/sharing.html, bundled at build time the same way
+// lyrics.js bundles src/lyrics/<slug>/*.txt. Authored as trusted HTML
+// (band-written, not user input) and rendered via innerHTML, so the file
+// owns its own markup (heading, paragraphs, links, emphasis) directly —
+// see the existing fragments for the expected classes
+// (.album-modal__panel-title, .sharing-tagline).
+const sharingContentFiles = import.meta.glob('../albums/*/sharing.html', {
+  eager: true,
+  query: '?raw',
+  import: 'default'
+})
 
-  const section = document.getElementById('sharing')
-  const listEl = document.getElementById('sharingList')
-  if (!section || !listEl) return
+function slugFromPath(path) {
+  const parts = path.split('/')
+  return parts.length >= 3 ? parts[parts.length - 2] : null
+}
 
-  section.hidden = false
+const contentHtmlBySlug = new Map()
+for (const [path, html] of Object.entries(sharingContentFiles)) {
+  const slug = slugFromPath(path)
+  if (slug) contentHtmlBySlug.set(slug, html.trim())
+}
 
+const cacheBySlug = new Map()
+
+function render(listEl, tracks) {
+  listEl.innerHTML = ''
   if (!tracks.length) {
     listEl.innerHTML = '<p class="sharing-empty">No tracks available.</p>'
     return
@@ -34,4 +46,38 @@ export async function initSharing() {
     `
     listEl.appendChild(item)
   })
+}
+
+const DEFAULT_CONTENT_HTML = `
+  <h3 class="album-modal__panel-title">Shatter the silence</h3>
+  <p class="sharing-tagline">All songs. No strings attached. Add yours!</p>
+  <p>Raw, instrumental tracks — no strings attached. Use them for covers, practice, or your own take. Take the tracks. Add your voice.</p>
+`
+
+// Renders `album`'s Sharing panel: its whole copy (title/tagline/intro) from
+// src/albums/<slug>/sharing.html, plus its track list into `els.listEl`.
+// Called each time the Sharing tab is activated; the track list is cached
+// per slug so reactivating the tab doesn't refetch Cloudinary, but the copy
+// is re-applied every time since switching albums must update it.
+export async function renderSharingForAlbum(album, els) {
+  const { contentEl, listEl } = els
+  if (contentEl) contentEl.innerHTML = contentHtmlBySlug.get(album.slug) || DEFAULT_CONTENT_HTML
+
+  if (!listEl) return
+  const slug = album.slug
+
+  if (cacheBySlug.has(slug)) {
+    render(listEl, cacheBySlug.get(slug))
+    return
+  }
+
+  try {
+    const res = await fetch(`/api/sharing?album=${encodeURIComponent(slug)}`)
+    if (!res.ok) return
+    const tracks = await res.json()
+    cacheBySlug.set(slug, tracks)
+    render(listEl, tracks)
+  } catch {
+    /* leave panel as-is on failure */
+  }
 }

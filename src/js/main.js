@@ -1,12 +1,16 @@
 import { AudioPlayer } from './player.js'
 import { initGallery } from './gallery.js'
-import { initLyrics } from './lyrics.js'
-import { initSharing } from './sharing.js'
+import { renderLyricsForAlbum } from './lyrics.js'
+import { renderSharingForAlbum } from './sharing.js'
 import { version } from '../../package.json'
 import * as DemoMode from './demo-mode.js'
 import { initDropZone } from './drop-zone.js'
 import { initShareButton, initIncomingSession } from './demo-share-ui.js'
 import { initMultitrack } from './multitrack-ui.js'
+import { initAlbumModal } from './album-modal.js'
+import { initAlbumCatalog } from './album-catalog.js'
+import { initMiniPlayer } from './mini-player.js'
+import { initInlineEdit } from './utils.js'
 
 // ─── Service Worker (PWA + offline) ───────────────────────
 if ('serviceWorker' in navigator) {
@@ -110,23 +114,57 @@ if (openSessionId && multitrack) {
   history.replaceState(null, '', `${location.origin}${location.pathname}#multitrack`)
 }
 
-// ─── Demo mode banner ─────────────────────────────────────
+// ─── Album modal + catalog ─────────────────────────────────
+// `miniPlayer` is assigned below, after the audio player exists — these
+// callbacks close over the `let` binding, so by the time a user can
+// actually trigger them the assignment has long since happened.
+let miniPlayer = null
+const albumModal = initAlbumModal({
+  onOpen: () => miniPlayer?.hide(),
+  onClose: () => miniPlayer?.showIfActive()
+})
+const albumCatalog = initAlbumCatalog(albumModal)
+
+// ─── Audio Player (loaded per-album by the modal) ─────────
+const player = new AudioPlayer()
+miniPlayer = initMiniPlayer({ player, albumModal })
+
+albumModal?.setPlayerLoader((album, opts) => {
+  player.loadAlbum(album, opts)
+  miniPlayer?.setAlbum(album, opts)
+})
+albumModal?.setLyricsLoader(album =>
+  renderLyricsForAlbum(album.slug, {
+    navEl: document.getElementById('lyricsNav'),
+    displayEl: document.getElementById('lyricsDisplay')
+  })
+)
+albumModal?.setSharingLoader(album =>
+  renderSharingForAlbum(album, {
+    contentEl: document.getElementById('sharingPanelContent'),
+    listEl: document.getElementById('sharingList')
+  })
+)
+
+// ─── Demo mode: opens as a synthetic, editable album in the shared modal ──
 const demoBanner = document.getElementById('demoBanner')
 if (DemoMode.isActive() && demoBanner) {
   demoBanner.hidden = false
   document.body.classList.add('demo-mode')
 
-  const hintEl      = document.getElementById('demoBannerHint')
-  const musicTitleEl = document.getElementById('musicSectionTitle')
+  const hintEl     = document.getElementById('demoBannerHint')
+  const titleEl    = document.getElementById('albumModalTitle')
   const nameInputEl = document.getElementById('musicNameInput')
-  const editBtnEl   = document.getElementById('musicEditNameBtn')
-  const artAreaEl   = document.getElementById('musicArtArea')
-  const artDropEl   = document.getElementById('musicArtDrop')
-  const artInputEl  = document.getElementById('musicArtInput')
-  const artImgEl    = document.getElementById('musicAlbumArt')
-  const playerEl    = document.querySelector('.player')
+  const editBtnEl  = document.getElementById('musicEditNameBtn')
+  const artInputEl = document.getElementById('musicArtInput')
+  const artDropEl  = document.getElementById('musicArtDrop')
+  const artImgEl   = document.getElementById('musicAlbumArt')
+  const playerEl   = document.querySelector('.player')
+
+  let demoArt = DemoMode.getAlbumArt()
 
   const applyArt = dataUrl => {
+    demoArt = dataUrl
     DemoMode.setAlbumArt(dataUrl)
     artImgEl.src = dataUrl
     artImgEl.hidden = false
@@ -136,16 +174,22 @@ if (DemoMode.isActive() && demoBanner) {
     }
   }
 
-  // ── Initialise from stored state ──────────────────────────
-  const storedName = DemoMode.getAlbumName()
-  if (musicTitleEl) musicTitleEl.textContent = storedName
-  if (hintEl) hintEl.textContent = `Listening to ${storedName}`
+  if (hintEl) hintEl.textContent = `Listening to ${DemoMode.getAlbumName()}`
 
-  const storedArt = DemoMode.getAlbumArt()
-  if (storedArt) applyArt(storedArt)
-
-  // ── Art area (desktop only) ───────────────────────────────
-  if (artAreaEl) artAreaEl.hidden = false
+  DemoMode.getTracks().then(tracks => {
+    initShareButton(tracks)
+    albumModal?.open(
+      {
+        slug: '__demo__',
+        title: DemoMode.getAlbumName(),
+        subtitle: '',
+        artUrl: demoArt,
+        hasLyrics: false,
+        hasSharing: false
+      },
+      { editable: !DemoMode.isReceived(), tracks }
+    )
+  })
 
   if (!DemoMode.isReceived()) {
     const processAndApply = async file => {
@@ -178,48 +222,23 @@ if (DemoMode.isActive() && demoBanner) {
     })
 
     // ── Inline album name editing ─────────────────────────────
-    if (editBtnEl) editBtnEl.hidden = false
-    if (musicTitleEl) {
-      musicTitleEl.classList.add('is-editable')
-      musicTitleEl.setAttribute('role', 'button')
-      musicTitleEl.setAttribute('tabindex', '0')
+    if (titleEl && nameInputEl) {
+      initInlineEdit({
+        displayEl: titleEl,
+        inputEl: nameInputEl,
+        editBtn: editBtnEl,
+        fallback: 'DEMO',
+        onCommit: name => {
+          const upperName = name.toUpperCase()
+          titleEl.textContent = upperName
+          DemoMode.setAlbumName(upperName)
+          if (hintEl) hintEl.textContent = `Listening to ${upperName}`
+        }
+      })
+      if (editBtnEl) editBtnEl.hidden = false
     }
-
-    const commitName = () => {
-      const newName = (nameInputEl.value.trim() || 'DEMO').toUpperCase()
-      DemoMode.setAlbumName(newName)
-      if (musicTitleEl) musicTitleEl.textContent = newName
-      if (hintEl) hintEl.textContent = `Listening to ${newName}`
-      musicTitleEl.hidden = false
-      editBtnEl.hidden = false
-      nameInputEl.hidden = true
-    }
-
-    const enterEditMode = () => {
-      nameInputEl.value = musicTitleEl.textContent
-      musicTitleEl.hidden = true
-      editBtnEl.hidden = true
-      nameInputEl.hidden = false
-      nameInputEl.focus()
-      nameInputEl.select()
-    }
-
-    editBtnEl?.addEventListener('click', enterEditMode)
-    musicTitleEl?.addEventListener('click', enterEditMode)
-    musicTitleEl?.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterEditMode() }
-    })
-    nameInputEl?.addEventListener('blur', commitName)
-    nameInputEl?.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); nameInputEl.blur() }
-      if (e.key === 'Escape') {
-        nameInputEl.value = musicTitleEl.textContent  // discard edit
-        nameInputEl.blur()
-      }
-    })
   }
 
-  document.getElementById('music')?.scrollTo(0, 0)
   document.getElementById('demoBannerExit')?.addEventListener('click', () => DemoMode.exit())
 }
 
@@ -236,21 +255,21 @@ if (shareParam) {
   initIncomingSession(shareParam, kind, nameParam || undefined)
 }
 
-// ─── Audio Player ──────────────────────────────────────────
-const player = new AudioPlayer()
-if (DemoMode.isActive()) {
-  DemoMode.getTracks().then(tracks => {
-    player.init(tracks)
-    initShareButton(tracks)
-  })
-} else {
-  player.init()
+// ─── Deep link: open a specific album directly (?album=<slug>) ────
+const albumSlugParam = _qs.get('album')
+if (albumSlugParam) {
+  albumCatalog?.openBySlug(albumSlugParam)
+  history.replaceState(null, '', `${location.origin}${location.pathname}#music`)
+} else if (!DemoMode.isActive()) {
+  // Back-compat: old bookmarked #lyrics/#sharing links open the matching
+  // album's modal on the right tab instead of landing on nothing.
+  const hash = location.hash.slice(1)
+  if (hash === 'lyrics') albumCatalog?.openFirstWithFeature('hasLyrics', { tab: 'lyrics' })
+  else if (hash === 'sharing') albumCatalog?.openFirstWithFeature('hasSharing', { tab: 'sharing' })
 }
 
 // ─── Gallery ───────────────────────────────────────────────
 initGallery()
-initLyrics()
-initSharing()
 
 // ─── Social links ──────────────────────────────────────────
 fetch('/api/config')

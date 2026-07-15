@@ -194,19 +194,23 @@
       <div class="nav__logo">
         <a href="#hero">Killing Freud</a>
       </div>
+      <div class="mini-player-slot" id="miniPlayerHeaderSlot"></div>
       <ul class="nav__links">
         <li><a href="#music">Music</a></li>
-        <li><a href="#lyrics">Lyrics</a></li>
         <li><a href="#about">About</a></li>
         <li><a href="#gallery">Gallery</a></li>
         <li><a href="#multitrack">Multitrack</a></li>
-        <li><a href="#sharing">Sharing</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
       <button class="nav__burger" id="navBurger" aria-label="Toggle menu">
         <span></span><span></span><span></span>
       </button>
     </nav>
+
+    <!-- Subheader: mini player overflow target for mobile / cramped header -->
+    <div class="subheader" id="subheader" hidden>
+      <div class="mini-player-slot" id="miniPlayerSubheaderSlot"></div>
+    </div>
 
     <!-- Hero -->
     <section class="hero" id="hero">
@@ -235,286 +239,17 @@
       </div>
     </section>
 
-    <!-- Music / Audio Player -->
+    <!-- Music / Albums -->
     <section class="music" id="music">
       <div class="container">
-        <div class="music-header">
-          <div class="music-header__text">
-            <div class="music-header__title-row">
-              <h2
-                class="section-title music-header__title"
-                id="musicSectionTitle"
-              >
-                Music
-              </h2>
-              <input
-                class="music-header__name-input"
-                id="musicNameInput"
-                hidden
-                type="text"
-                maxlength="50"
-                autocomplete="off"
-                spellcheck="false"
-                aria-label="Edit album name"
-              />
-              <button
-                class="music-header__edit-btn"
-                id="musicEditNameBtn"
-                hidden
-                aria-label="Edit album name"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  />
-                  <path
-                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  />
-                </svg>
-              </button>
-            </div>
-            <p class="section-subtitle" id="musicSectionSubtitle" hidden></p>
-          </div>
-          <div class="music-header__art-area" id="musicArtArea" hidden>
-            <input
-              type="file"
-              id="musicArtInput"
-              accept="image/jpeg,image/png,image/webp"
-              hidden
-              aria-hidden="true"
-            />
-            <div
-              class="music-header__art-drop"
-              id="musicArtDrop"
-              tabindex="0"
-              role="button"
-              aria-label="Upload album art"
-            >
-              <span class="music-header__art-placeholder">Drop album art</span>
-              <img
-                class="music-header__art-img"
-                id="musicAlbumArt"
-                hidden
-                alt="Album art"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div class="player">
-          <!-- Player controls -->
-          <div class="player__main">
-            <div class="player__artwork">
-              <div class="player__artwork-inner">
-                <svg
-                  viewBox="0 0 80 80"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <defs>
-                    <!-- Full circle path via two half-arcs (r=10, center 40,40) -->
-                    <path
-                      id="vinylTextPath"
-                      d="M 40,30 A 10,10 0 1,1 40,50 A 10,10 0 1,1 40,30"
-                    />
-                  </defs>
-                  <!-- Record body -->
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="38"
-                    fill="#111"
-                    stroke="#2a2a2a"
-                    stroke-width="1"
-                  />
-                  <!-- Grooves -->
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
-                    stroke="#222"
-                    stroke-width="0.8"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="30"
-                    stroke="#222"
-                    stroke-width="0.8"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="26"
-                    stroke="#222"
-                    stroke-width="0.8"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="22"
-                    stroke="#222"
-                    stroke-width="0.8"
-                  />
-                  <!-- Label -->
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="15"
-                    fill="var(--accent)"
-                    opacity="0.85"
-                  />
-                  <!-- Circular text inside the label — textLength = 2π×10 ≈ 62.83 -->
-                  <text
-                    font-size="3"
-                    fill="rgba(255,255,255,0.8)"
-                    font-family="Oswald, sans-serif"
-                    font-weight="600"
-                  >
-                    <textPath
-                      href="#vinylTextPath"
-                      textLength="62.83"
-                      lengthAdjust="spacing"
-                    >
-                      Killing Freud · Killing Freud · Killing Freud · Killing
-                      Freud ·
-                    </textPath>
-                  </text>
-                  <!-- Center hole -->
-                  <circle cx="40" cy="40" r="2.5" fill="#0d0d0d" />
-                </svg>
-              </div>
-            </div>
-
-            <div class="player__info">
-              <div class="player__track-name" id="playerTrackName">
-                Select a track
-              </div>
-              <div class="player__track-index" id="playerTrackIndex">—</div>
-            </div>
-
-            <div class="player__controls">
-              <button
-                class="player__btn player__btn--prev"
-                id="btnPrev"
-                aria-label="Previous track"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
-                </svg>
-              </button>
-              <button
-                class="player__btn player__btn--play"
-                id="btnPlay"
-                aria-label="Play / Pause"
-              >
-                <svg class="icon-play" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-                <svg
-                  class="icon-pause"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  style="display: none"
-                >
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              </button>
-              <button
-                class="player__btn player__btn--next"
-                id="btnNext"
-                aria-label="Next track"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z" />
-                </svg>
-              </button>
-            </div>
-
-            <div class="player__volume">
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                class="player__volume-icon"
-              >
-                <path
-                  d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
-                />
-              </svg>
-              <input
-                type="range"
-                id="volumeSlider"
-                class="player__volume-slider"
-                min="0"
-                max="1"
-                step="0.05"
-                value="0.8"
-                aria-label="Volume"
-              />
-            </div>
-          </div>
-
-          <!-- Progress bar -->
-          <div class="player__progress-wrap">
-            <span class="player__time" id="currentTime">0:00</span>
-            <div
-              class="player__progress"
-              id="progressBar"
-              role="slider"
-              aria-label="Seek"
-            >
-              <div class="player__progress-fill" id="progressFill"></div>
-            </div>
-            <span class="player__time" id="totalTime">0:00</span>
-          </div>
-
-          <!-- Loading state -->
-          <div class="player__loading" id="playerLoading" hidden>
-            <div class="spinner"></div>
-            <span>Loading tracks...</span>
-          </div>
-
-          <!-- Error state -->
-          <div class="player__error" id="playerError" hidden>
-            <span
-              >Could not load tracks. Check your Cloudinary configuration.</span
-            >
-          </div>
-        </div>
-
-        <!-- Track list -->
-        <div class="tracklist" id="tracklist">
-          <div class="tracklist__empty" id="tracklistEmpty">
-            No tracks loaded yet.
-          </div>
-        </div>
-
-        <!-- Offline download controls (populated by player.js) -->
-        <div class="offline-controls" id="offlineControls" hidden></div>
-      </div>
-    </section>
-
-    <!-- Lyrics -->
-    <section class="lyrics-section" id="lyrics" hidden>
-      <div class="container">
-        <h2 class="section-title">Lyrics</h2>
-        <div class="lyrics-layout">
-          <nav class="lyrics-nav" id="lyricsNav" aria-label="Song list"></nav>
-          <article
-            class="lyrics-display"
-            id="lyricsDisplay"
-            aria-live="polite"
-          ></article>
+        <h2 class="section-title">Music</h2>
+        <p class="section-subtitle">
+          Select an album to listen, read lyrics, and more.
+        </p>
+        <div class="album-grid" id="albumGrid">
+          <p class="album-grid__empty" id="albumGridEmpty" hidden>
+            No albums published yet.
+          </p>
         </div>
       </div>
     </section>
@@ -804,27 +539,355 @@
       </div>
     </div>
 
-    <!-- Sharing -->
-    <section class="sharing-section" id="sharing" hidden>
-      <div class="container">
-        <h2 class="section-title">Shatter the silence</h2>
-        <p>All songs. No vocals. Adds yours!</p>
-        <p>Make them yours!</p>
-        <br />
-        <p class="sharing-intro">
-          These songs were born out of a need to process real, heavy,
-          life-altering experiences through pure sonic force. But pain and
-          survival aren't solitary journeys. If these riffs speak to your own
-          story, I invite you to step up to the microphone. I’m stripping away
-          my vocals and providing the raw, instrumental tracks for anyone who
-          needs a heavy canvas to scream, sing, or speak their own truth. Use
-          them for covers, use them for practice, or use them as a sonic
-          exorcism for whatever you're fighting through. Take the tracks. Add
-          your voice. Shatter the walls.
-        </p>
-        <div class="sharing-list" id="sharingList"></div>
+    <!-- Album modal: one shared shell, rebound to whichever album is open -->
+    <div
+      class="album-modal"
+      id="albumModal"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="albumModalTitle"
+    >
+      <div class="album-modal__box">
+        <button
+          class="album-modal__close"
+          id="albumModalClose"
+          aria-label="Close"
+        >
+          &#x2715;
+        </button>
+
+        <div class="album-modal__header">
+          <div class="music-header__art-area" id="musicArtArea" hidden>
+            <input
+              type="file"
+              id="musicArtInput"
+              accept="image/jpeg,image/png,image/webp"
+              hidden
+              aria-hidden="true"
+            />
+            <div
+              class="music-header__art-drop"
+              id="musicArtDrop"
+              tabindex="0"
+              role="button"
+              aria-label="Upload album art"
+            >
+              <span class="music-header__art-placeholder">Drop album art</span>
+              <img
+                class="music-header__art-img"
+                id="musicAlbumArt"
+                hidden
+                alt="Album art"
+              />
+            </div>
+          </div>
+
+          <div class="album-modal__text">
+            <div class="music-header__title-row">
+              <h2
+                class="album-modal__title music-header__title"
+                id="albumModalTitle"
+              >
+                Album
+              </h2>
+              <input
+                class="music-header__name-input"
+                id="musicNameInput"
+                hidden
+                type="text"
+                maxlength="50"
+                autocomplete="off"
+                spellcheck="false"
+                aria-label="Edit album name"
+              />
+              <button
+                class="music-header__edit-btn"
+                id="musicEditNameBtn"
+                hidden
+                aria-label="Edit album name"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="15"
+                  height="15"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <p class="album-modal__blurb" id="albumModalBlurb"></p>
+            <p class="section-subtitle" id="musicSectionSubtitle" hidden></p>
+          </div>
+        </div>
+
+        <nav class="album-modal__tabs" id="albumModalTabs">
+          <button
+            type="button"
+            class="album-modal__tab is-active"
+            data-tab="player"
+          >
+            Player
+          </button>
+          <button
+            type="button"
+            class="album-modal__tab"
+            data-tab="lyrics"
+            id="albumTabLyrics"
+            hidden
+          >
+            Lyrics
+          </button>
+          <button
+            type="button"
+            class="album-modal__tab"
+            data-tab="sharing"
+            id="albumTabSharing"
+            hidden
+          >
+            Sharing
+          </button>
+        </nav>
+
+        <div class="album-modal__panels">
+          <!-- Player panel -->
+          <section class="album-modal__panel" data-panel="player">
+            <div class="player">
+              <!-- Player controls -->
+              <div class="player__main">
+                <div class="player__artwork">
+                  <div class="player__artwork-inner">
+                    <svg
+                      viewBox="0 0 80 80"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <defs>
+                        <!-- Full circle path via two half-arcs (r=10, center 40,40) -->
+                        <path
+                          id="vinylTextPath"
+                          d="M 40,30 A 10,10 0 1,1 40,50 A 10,10 0 1,1 40,30"
+                        />
+                      </defs>
+                      <!-- Record body -->
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="38"
+                        fill="#111"
+                        stroke="#2a2a2a"
+                        stroke-width="1"
+                      />
+                      <!-- Grooves -->
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="34"
+                        stroke="#222"
+                        stroke-width="0.8"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="30"
+                        stroke="#222"
+                        stroke-width="0.8"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="26"
+                        stroke="#222"
+                        stroke-width="0.8"
+                      />
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="22"
+                        stroke="#222"
+                        stroke-width="0.8"
+                      />
+                      <!-- Label -->
+                      <circle
+                        cx="40"
+                        cy="40"
+                        r="15"
+                        fill="var(--accent)"
+                        opacity="0.85"
+                      />
+                      <!-- Circular text inside the label — textLength = 2π×10 ≈ 62.83 -->
+                      <text
+                        font-size="3"
+                        fill="rgba(255,255,255,0.8)"
+                        font-family="Oswald, sans-serif"
+                        font-weight="600"
+                      >
+                        <textPath
+                          href="#vinylTextPath"
+                          textLength="62.83"
+                          lengthAdjust="spacing"
+                        >
+                          Killing Freud · Killing Freud · Killing Freud ·
+                          Killing Freud ·
+                        </textPath>
+                      </text>
+                      <!-- Center hole -->
+                      <circle cx="40" cy="40" r="2.5" fill="#0d0d0d" />
+                    </svg>
+                  </div>
+                </div>
+
+                <div class="player__info">
+                  <div class="player__track-name" id="playerTrackName">
+                    Select a track
+                  </div>
+                  <div class="player__track-index" id="playerTrackIndex">
+                    —
+                  </div>
+                </div>
+
+                <div class="player__controls">
+                  <button
+                    class="player__btn player__btn--prev"
+                    id="btnPrev"
+                    aria-label="Previous track"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="player__btn player__btn--play"
+                    id="btnPlay"
+                    aria-label="Play / Pause"
+                  >
+                    <svg
+                      class="icon-play"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                    <svg
+                      class="icon-pause"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                      style="display: none"
+                    >
+                      <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                    </svg>
+                  </button>
+                  <button
+                    class="player__btn player__btn--next"
+                    id="btnNext"
+                    aria-label="Next track"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="player__volume">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    class="player__volume-icon"
+                  >
+                    <path
+                      d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"
+                    />
+                  </svg>
+                  <input
+                    type="range"
+                    id="volumeSlider"
+                    class="player__volume-slider"
+                    min="0"
+                    max="1"
+                    step="0.05"
+                    value="0.8"
+                    aria-label="Volume"
+                  />
+                </div>
+              </div>
+
+              <!-- Progress bar -->
+              <div class="player__progress-wrap">
+                <span class="player__time" id="currentTime">0:00</span>
+                <div
+                  class="player__progress"
+                  id="progressBar"
+                  role="slider"
+                  aria-label="Seek"
+                >
+                  <div class="player__progress-fill" id="progressFill"></div>
+                </div>
+                <span class="player__time" id="totalTime">0:00</span>
+              </div>
+
+              <!-- Loading state -->
+              <div class="player__loading" id="playerLoading" hidden>
+                <div class="spinner"></div>
+                <span>Loading tracks...</span>
+              </div>
+
+              <!-- Error state -->
+              <div class="player__error" id="playerError" hidden>
+                <span
+                  >Could not load tracks. Check your Cloudinary
+                  configuration.</span
+                >
+              </div>
+            </div>
+
+            <!-- Track list -->
+            <div class="tracklist" id="tracklist">
+              <div class="tracklist__empty" id="tracklistEmpty">
+                No tracks loaded yet.
+              </div>
+            </div>
+
+            <!-- Offline download controls (populated by player.js) -->
+            <div class="offline-controls" id="offlineControls" hidden></div>
+          </section>
+
+          <!-- Lyrics panel -->
+          <section class="album-modal__panel" data-panel="lyrics" hidden>
+            <div class="lyrics-layout">
+              <nav
+                class="lyrics-nav"
+                id="lyricsNav"
+                aria-label="Song list"
+              ></nav>
+              <article
+                class="lyrics-display"
+                id="lyricsDisplay"
+                aria-live="polite"
+              ></article>
+            </div>
+          </section>
+
+          <!-- Sharing panel (only shown for albums with hasSharing) —
+               title/tagline/intro all come from the per-album HTML fragment
+               at src/albums/<slug>/sharing.html, injected by sharing.js. -->
+          <section class="album-modal__panel" data-panel="sharing" hidden>
+            <div class="sharing-content" id="sharingPanelContent"></div>
+            <div class="sharing-list" id="sharingList"></div>
+          </section>
+        </div>
       </div>
-    </section>
+    </div>
 
     <!-- Contact / Social -->
     <section class="contact" id="contact">

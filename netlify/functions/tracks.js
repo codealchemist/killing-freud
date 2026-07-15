@@ -1,17 +1,20 @@
 /**
  * Netlify Function: tracks
- * GET /api/tracks
+ * GET /api/tracks?album=<slug>
  *
- * Returns [{ id, name, size, url }] for all MP3s in the configured folder.
+ * Returns [{ id, name, size, url }] for all MP3s in the given album's
+ * Cloudinary folder. If `album` is omitted, falls back to the legacy
+ * single-album CLOUDINARY_TRACKS_FOLDER env var for backward compatibility.
  *
  * Env vars required:
  *   CLOUDINARY_CLOUD_NAME
  *   CLOUDINARY_API_KEY
  *   CLOUDINARY_API_SECRET
- *   CLOUDINARY_TRACKS_FOLDER  (optional)
+ *   CLOUDINARY_TRACKS_FOLDER  (optional, legacy fallback)
  */
 
 const { buildAuth, buildPrefix, fetchMp3Resources, cleanFilename } = require('../lib/cloudinary')
+const { getAlbumBySlug } = require('../lib/albums')
 
 exports.handler = async function (event) {
   if (event.httpMethod !== 'GET') {
@@ -29,9 +32,24 @@ exports.handler = async function (event) {
     }
   }
 
+  const albumSlug = event.queryStringParameters?.album
+  let folder = CLOUDINARY_TRACKS_FOLDER
+
+  if (albumSlug) {
+    const album = getAlbumBySlug(albumSlug)
+    if (!album) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Unknown album' }),
+        headers: { 'Content-Type': 'application/json' }
+      }
+    }
+    folder = album.tracksFolder
+  }
+
   try {
     const auth      = buildAuth(CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
-    const prefix    = buildPrefix(CLOUDINARY_TRACKS_FOLDER)
+    const prefix    = buildPrefix(folder)
     const resources = await fetchMp3Resources(CLOUDINARY_CLOUD_NAME, auth, prefix)
 
     const tracks = resources.map(r => ({
