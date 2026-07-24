@@ -2,8 +2,11 @@
 //   Line 1  — song title
 //   Line 2  — blank
 //   Line 3+ — lyrics body (blank lines separate stanzas)
+//
+// Files live under src/lyrics/<album-slug>/*.txt so each album's lyrics stay
+// grouped, even though they're all bundled at build time via one glob.
 
-const rawFiles = import.meta.glob('../lyrics/*.txt', {
+const rawFiles = import.meta.glob('../lyrics/**/*.txt', {
   eager: true,
   query: '?raw',
   import: 'default',
@@ -20,19 +23,33 @@ function parse(raw) {
   return { title, stanzas }
 }
 
-export function initLyrics() {
-  const entries = Object.entries(rawFiles)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([, text]) => parse(text))
+// path looks like '../lyrics/<slug>/<file>.txt' — the slug is the folder name.
+function slugFromPath(path) {
+  const parts = path.split('/')
+  return parts.length >= 3 ? parts[parts.length - 2] : null
+}
 
+const entriesBySlug = new Map()
+for (const [path, text] of Object.entries(rawFiles)) {
+  const slug = slugFromPath(path)
+  if (!slug) continue
+  if (!entriesBySlug.has(slug)) entriesBySlug.set(slug, [])
+  entriesBySlug.get(slug).push({ path, ...parse(text) })
+}
+for (const list of entriesBySlug.values()) {
+  list.sort((a, b) => a.path.localeCompare(b.path))
+}
+
+// Renders `slug`'s lyrics into the given nav/display elements. Called each
+// time the Lyrics tab is activated for an album — cheap (already bundled),
+// so no caching needed beyond the module-level parse done once above.
+export function renderLyricsForAlbum(slug, { navEl, displayEl }) {
+  const entries = entriesBySlug.get(slug) || []
+  if (!navEl || !displayEl) return
+
+  navEl.innerHTML = ''
+  displayEl.innerHTML = ''
   if (!entries.length) return
-
-  const section    = document.getElementById('lyrics')
-  const navEl      = document.getElementById('lyricsNav')
-  const displayEl  = document.getElementById('lyricsDisplay')
-  if (!section || !navEl || !displayEl) return
-
-  section.hidden = false
 
   function show(index) {
     navEl.querySelectorAll('.lyrics-nav__btn').forEach((btn, i) =>

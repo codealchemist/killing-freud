@@ -1,18 +1,21 @@
 /**
  * Netlify Function: sharing
- * GET /api/sharing
+ * GET /api/sharing?album=<slug>
  *
- * Returns [{ id, name, size, downloadUrl }] for MP3s in the sharing folder.
- * downloadUrl uses Cloudinary's fl_attachment flag to trigger a browser download.
+ * Returns [{ id, name, size, downloadUrl }] for MP3s in the given album's
+ * sharing folder. downloadUrl uses Cloudinary's fl_attachment flag to
+ * trigger a browser download. If `album` is omitted, falls back to the
+ * legacy single-album CLOUDINARY_SHARING_TRACKS_FOLDER env var.
  *
  * Env vars required:
  *   CLOUDINARY_CLOUD_NAME
  *   CLOUDINARY_API_KEY
  *   CLOUDINARY_API_SECRET
- *   CLOUDINARY_SHARING_TRACKS_FOLDER  (required — no folder, no tracks)
+ *   CLOUDINARY_SHARING_TRACKS_FOLDER  (optional, legacy fallback)
  */
 
 const { buildAuth, buildPrefix, fetchMp3Resources, cleanFilename } = require('../lib/cloudinary')
+const { getAlbumBySlug } = require('../lib/albums')
 
 function toDownloadUrl(secureUrl) {
   return secureUrl.replace('/upload/', '/upload/fl_attachment/')
@@ -34,7 +37,22 @@ exports.handler = async function (event) {
     }
   }
 
-  if (!CLOUDINARY_SHARING_TRACKS_FOLDER) {
+  const albumSlug = event.queryStringParameters?.album
+  let folder = CLOUDINARY_SHARING_TRACKS_FOLDER
+
+  if (albumSlug) {
+    const album = getAlbumBySlug(albumSlug)
+    if (!album) {
+      return {
+        statusCode: 404,
+        body: JSON.stringify({ error: 'Unknown album' }),
+        headers: { 'Content-Type': 'application/json' }
+      }
+    }
+    folder = album.sharingFolder
+  }
+
+  if (!folder) {
     return {
       statusCode: 200,
       body: JSON.stringify([]),
@@ -44,7 +62,7 @@ exports.handler = async function (event) {
 
   try {
     const auth      = buildAuth(CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)
-    const prefix    = buildPrefix(CLOUDINARY_SHARING_TRACKS_FOLDER)
+    const prefix    = buildPrefix(folder)
     const resources = await fetchMp3Resources(CLOUDINARY_CLOUD_NAME, auth, prefix)
 
     const tracks = resources.map(r => ({

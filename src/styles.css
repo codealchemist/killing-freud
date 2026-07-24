@@ -18,6 +18,7 @@
 
   --nav-h: 64px;
   --demo-h: 0px;
+  --subheader-h: 0px;
   --radius: 0px;
   --transition: 200ms ease;
 
@@ -27,6 +28,13 @@
 body.demo-mode {
   --demo-h: 36px;
   overflow: hidden;
+}
+
+/* Set by mini-player.js when the mini player is docked in the subheader
+   (mobile, or whenever the header is too cramped to fit it) — everything
+   anchored below the fixed header reads this var so it clears both bars. */
+body.has-subheader-player {
+  --subheader-h: 52px;
 }
 
 body.demo-mode #music {
@@ -186,6 +194,10 @@ input[type='range'] {
   transition: background var(--transition);
 }
 
+.nav__logo {
+  flex-shrink: 0;
+}
+
 .nav__logo a {
   font-family: var(--font-heading);
   font-size: 1.6rem;
@@ -207,8 +219,21 @@ input[type='range'] {
 
 .nav__links {
   display: flex;
+  flex-shrink: 0;
   gap: 40px;
   list-style: none;
+}
+
+/* Flexible middle slot the mini player docks into when there's room —
+   flex:1 lets it (and only it) absorb/give up space between the logo and
+   the nav links, which is what makes the overflow check in
+   mini-player.js's evaluatePlacement() a reliable "does it actually fit"
+   signal instead of everything silently shrinking to compensate. */
+.mini-player-slot {
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  justify-content: center;
 }
 
 .nav__links a {
@@ -254,7 +279,7 @@ input[type='range'] {
     /* position the menu below the header so the header stays visible */
     left: 0;
     right: 0;
-    top: calc(var(--nav-h) + var(--demo-h));
+    top: calc(var(--nav-h) + var(--demo-h) + var(--subheader-h));
     flex-direction: column;
     gap: 8px;
     background: rgba(8, 8, 8, 0.98);
@@ -277,7 +302,7 @@ input[type='range'] {
     /* fully expand to viewport height */
     max-height: 100vh;
     /* push menu items below the header so the header remains visible */
-    padding-top: calc(var(--nav-h) + 16px);
+    padding-top: calc(var(--nav-h) + var(--subheader-h) + 16px);
     padding-bottom: 24px;
     transform: translateY(0);
     opacity: 1;
@@ -288,8 +313,8 @@ input[type='range'] {
   .nav__links.is-open.force-open {
     /* force-open should still respect header height */
     max-height: none !important;
-    height: calc(100vh - var(--nav-h) - var(--demo-h)) !important;
-    top: calc(var(--nav-h) + var(--demo-h)) !important;
+    height: calc(100vh - var(--nav-h) - var(--demo-h) - var(--subheader-h)) !important;
+    top: calc(var(--nav-h) + var(--demo-h) + var(--subheader-h)) !important;
     left: 0 !important;
     right: 0 !important;
     padding-top: calc(var(--nav-h) + 16px) !important;
@@ -404,23 +429,6 @@ input[type='range'] {
 .music {
   padding: 100px 0;
   background: var(--bg);
-}
-
-/* ── Music section header (title + optional album art) ── */
-.music-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: 48px;
-}
-
-.music-header .section-title {
-  margin-bottom: 10px;
-}
-
-.music-header .section-subtitle {
-  margin-bottom: 0;
 }
 
 /* ── Title row (heading + name input + pencil) ───────────── */
@@ -1300,12 +1308,35 @@ cite {
   border-top: 1px solid var(--border);
 }
 
-.sharing-intro {
+/* Whole Sharing panel copy (title/tagline/intro), injected as one HTML
+   fragment authored at src/albums/<slug>/sharing.html — the fragment owns
+   its own heading/paragraph markup, this just styles it consistently. */
+.sharing-content {
+  max-width: 560px;
+  margin-bottom: 48px;
+}
+
+.sharing-content .sharing-tagline {
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.sharing-content p:not(.sharing-tagline) {
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.8;
-  margin-bottom: 48px;
-  max-width: 560px;
+  margin: 0;
+}
+
+.sharing-content p:not(.sharing-tagline) + p:not(.sharing-tagline) {
+  margin-top: 1em;
+}
+
+.sharing-content a {
+  color: var(--accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .sharing-list {
@@ -2457,4 +2488,348 @@ cite {
 
 .trackswitch .waveform-wrap .seekwrap {
   --seekhead-color: var(--text);
+}
+
+/* ── Album grid (Music section) ─────────────────────────── */
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 24px;
+}
+
+.album-grid__empty {
+  color: var(--text-dim);
+  font-size: 0.875rem;
+  letter-spacing: 0.05em;
+  padding: 24px 0;
+}
+
+.album-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 0;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.album-card__art {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: var(--surface);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+  transition: border-color var(--transition);
+}
+
+.album-card:hover .album-card__art,
+.album-card:focus-visible .album-card__art {
+  border-color: var(--accent);
+}
+
+.album-card__title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.album-card__subtitle {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* ── Album modal ──────────────────────────────────────────
+   Overlay/box/close chrome mirrors .multitrack-modal so the two modals
+   feel consistent; this one adds a header (art/title/blurb) and tabs. */
+.album-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 8, 8, 0.82);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 24px;
+}
+
+.album-modal__box {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 32px;
+  width: 100%;
+  max-width: 720px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  .album-modal {
+    padding: 0;
+  }
+
+  .album-modal__box {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    border: none;
+    border-radius: 0;
+    padding: 24px 20px;
+  }
+}
+
+.album-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  font-size: 1rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  background: none;
+  border: none;
+  line-height: 1;
+  padding: 4px;
+  transition: color var(--transition);
+}
+
+.album-modal__close:hover {
+  color: var(--text);
+}
+
+.album-modal__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding-right: 24px;
+}
+
+.album-modal__text {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Reuses .music-header__title's editable dotted-underline behavior, just
+   at a size that fits the modal instead of a full-page section heading. */
+.album-modal__title.music-header__title {
+  font-size: 1.6rem;
+  letter-spacing: 0.1em;
+  margin: 0 0 6px;
+}
+
+.album-modal__header .music-header__name-input {
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+}
+
+.album-modal__blurb {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+  max-width: 52ch;
+}
+
+.album-modal__header .music-header__art-area {
+  width: 96px;
+}
+
+.album-modal__header .music-header__art-drop {
+  width: 96px;
+  height: 96px;
+}
+
+/* Non-editable (real catalog) albums show static art with no upload
+   affordance — strip the dashed "drop zone" styling in that state. */
+.album-modal__header .music-header__art-drop.is-readonly {
+  cursor: default;
+  border-style: solid;
+  border-color: transparent;
+}
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+.album-modal__tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.album-modal__tab {
+  background: none;
+  border: none;
+  padding: 10px 16px;
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition:
+    color var(--transition),
+    border-color var(--transition);
+}
+
+.album-modal__tab:hover {
+  color: var(--text);
+}
+
+.album-modal__tab.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.album-modal__panel-title {
+  font-family: var(--font-heading);
+  font-size: 1.1rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+
+/* ── Subheader (mini player overflow target) ────────────────
+   Sits directly below .nav, sized by --subheader-h (0 when unused, toggled
+   by mini-player.js via body.has-subheader-player). It overlays page
+   content the same way .nav does — the site never reserves scroll-flow
+   space for the fixed header, so this doesn't need to either. */
+.subheader {
+  position: fixed;
+  top: calc(var(--nav-h) + var(--demo-h));
+  left: 0;
+  right: 0;
+  z-index: 99;
+  height: var(--subheader-h);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  /* Same horizontal padding as .nav, so the bar reads as a continuation of
+     the header rather than a separately-margined strip. */
+  padding: 0 32px;
+  background: rgba(8, 8, 8, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(122, 138, 138, 0.15);
+}
+
+/* In the subheader there's no logo/links sharing the row, so — unlike the
+   compact, centered header instance — the mini player stretches to fill
+   the full width inside that shared 32px gutter. */
+.subheader .mini-player {
+  flex: 1;
+  min-width: 0;
+  max-width: none;
+}
+
+/* ── Mini player ─────────────────────────────────────────────
+   One shared node, moved between #miniPlayerHeaderSlot and
+   #miniPlayerSubheaderSlot by mini-player.js. */
+.mini-player {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+  max-width: 420px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+}
+
+.mini-player__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mini-player__art {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  background-color: var(--surface);
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--border);
+}
+
+.mini-player__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.mini-player__controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.mini-player__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.mini-player__btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mini-player__btn:hover {
+  color: var(--text);
+}
+
+.mini-player__btn--play {
+  color: var(--text);
+}
+
+.mini-player__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--border);
+}
+
+.mini-player__progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 150ms linear;
 }

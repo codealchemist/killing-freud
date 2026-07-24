@@ -39,6 +39,14 @@ export class AudioPlayer {
     this._cachedMap = new Map()
     this._downloading = new Set()
     this._isDemo = false
+    // Fetched track lists keyed by album slug, so reopening an already-open
+    // album's Player tab doesn't re-hit Cloudinary or reset playback.
+    this._trackCache = new Map()
+    this._currentSlug = null
+    this._playing = false
+    this._progressPct = 0
+    // Subscribers (mini-player.js) notified on every playback/track change.
+    this._changeListeners = []
 
     this.btnPlay = document.getElementById('btnPlay')
     this.btnPrev = document.getElementById('btnPrev')
@@ -59,56 +67,99 @@ export class AudioPlayer {
 
     this.audio.volume = parseFloat(this.volumeSlider.value)
     this._bindEvents()
+
+    // Single delegated listener, bound once — survives every tracklist
+    // re-render across album switches.
+    this.tracklistEl.addEventListener('click', e => {
+      const btn = e.target.closest('.tracklist__offline-btn')
+      if (!btn) return
+      e.stopPropagation()
+      this._handleOfflineAction(parseInt(btn.dataset.index, 10))
+    })
   }
 
-  async init(demoTracks = null) {
+  // Loads `album` into the shared player DOM. `opts.tracks` (demo mode)
+  // supplies tracks directly, skipping the network fetch entirely.
+  //
+  // Reopening the same non-demo album (same slug) is a no-op: it neither
+  // refetches Cloudinary nor resets playback, so audio kept playing behind
+  // a closed modal is undisturbed. Only switching to a *different* album
+  // does a hard reset (pause, revoke object URL, clear selection).
+  async loadAlbum(album, opts = {}) {
+    const slug = album.slug
+    const isDemo = Boolean(opts.tracks)
+
+    if (!isDemo && slug === this._currentSlug) return
+
+    this.audio.pause()
+    if (this._currentObjectURL) {
+      URL.revokeObjectURL(this._currentObjectURL)
+      this._currentObjectURL = null
+    }
+    this.currentIndex = -1
+    this.trackNameEl.textContent = 'Select a track'
+    this.trackIndexEl.textContent = '—'
+    this._setPlayingState(false)
+
+    this._isDemo = isDemo
+    this._currentSlug = slug
     this._showLoading(true)
     this._showError(false)
 
-    if (demoTracks) {
-      this._isDemo = true
-      this.tracks = demoTracks
+    if (isDemo) {
+      this.tracks = opts.tracks
       this._renderTracklist()
       this._renderAlbumMeta()
       if (this.offlineControlsEl) this.offlineControlsEl.hidden = true
       this._showLoading(false)
-      this.tracklistEl.addEventListener('click', e => {
-        if (e.target.closest('.tracklist__offline-btn')) e.stopPropagation()
-      })
       return
     }
 
-    try {
-      const res = await fetch('/api/tracks')
-      const data = await res.json()
-      if (!res.ok)
-        throw new Error(data.details || data.error || `HTTP ${res.status}`)
-      this.tracks = data
-    } catch (err) {
-      console.error('Failed to load tracks:', err)
-      // Offline fallback: show whatever is already in IndexedDB
+    if (this._trackCache.has(slug)) {
+      this.tracks = this._trackCache.get(slug)
+    } else {
       try {
-        const map = await getCachedMap()
-        if (map.size > 0) {
-          this.tracks = [...map.values()].map(c => ({
-            id: c.id,
-            name: c.name,
-            size: c.size,
-            url: null,
-            offlineState: 'offline-only',
-            _cacheKey: c.id
-          }))
-        } else {
+        const res = await fetch(`/api/tracks?album=${encodeURIComponent(slug)}`)
+        const data = await res.json()
+        if (!res.ok)
+          throw new Error(data.details || data.error || `HTTP ${res.status}`)
+        // A different album may have been opened while this fetch was in
+        // flight — bail out so its stale response doesn't clobber the DOM.
+        if (this._currentSlug !== slug) return
+        this.tracks = data
+        this._trackCache.set(slug, data)
+      } catch (err) {
+        if (this._currentSlug !== slug) return
+        console.error('Failed to load tracks:', err)
+        // Offline fallback: show whatever is already in IndexedDB. Cached
+        // tracks aren't tagged by album (Cloudinary public_ids are unique
+        // account-wide), so this shows everything downloaded so far rather
+        // than just this album's tracks.
+        try {
+          const map = await getCachedMap()
+          if (map.size > 0) {
+            this.tracks = [...map.values()].map(c => ({
+              id: c.id,
+              name: c.name,
+              size: c.size,
+              url: null,
+              offlineState: 'offline-only',
+              _cacheKey: c.id
+            }))
+          } else {
+            this._showError(true, err.message)
+            this._showLoading(false)
+            return
+          }
+        } catch {
           this._showError(true, err.message)
           this._showLoading(false)
           return
         }
-      } catch {
-        this._showError(true, err.message)
-        this._showLoading(false)
-        return
       }
     }
+
+    if (this._currentSlug !== slug) return
 
     try {
       this._cachedMap = await getCachedMap()
@@ -121,14 +172,6 @@ export class AudioPlayer {
     this._renderAlbumMeta()
     this._renderOfflineControls()
     this._showLoading(false)
-
-    // Single delegated listener — survives tracklist re-renders
-    this.tracklistEl.addEventListener('click', e => {
-      const btn = e.target.closest('.tracklist__offline-btn')
-      if (!btn) return
-      e.stopPropagation()
-      this._handleOfflineAction(parseInt(btn.dataset.index, 10))
-    })
   }
 
   // ─── Offline state ────────────────────────────────────────
@@ -471,11 +514,38 @@ export class AudioPlayer {
     this.playTrack((this.currentIndex + 1) % this.tracks.length)
   }
 
+  // ─── Public API for external controllers (mini-player.js) ────
+  togglePlay() { this._togglePlay() }
+  next() { this._nextTrack() }
+  prev() { this._prevTrack() }
+
+  // Registers a listener notified with `{ trackName, index, total, playing,
+  // progress }` on every playback/track-selection change.
+  onChange(callback) {
+    this._changeListeners.push(callback)
+  }
+
+  _notifyChange() {
+    if (!this._changeListeners.length) return
+    const track = this.currentIndex >= 0 ? this.tracks[this.currentIndex] : null
+    const snapshot = {
+      trackName: track ? cleanName(track.name) : null,
+      index: this.currentIndex,
+      total: this.tracks.length,
+      playing: this._playing,
+      progress: this._progressPct
+    }
+    this._changeListeners.forEach(cb => cb(snapshot))
+  }
+
   _onTimeUpdate() {
     const { currentTime, duration } = this.audio
     this.currentTimeEl.textContent = this._formatTime(currentTime)
-    if (duration)
-      this.progressFill.style.width = `${(currentTime / duration) * 100}%`
+    if (duration) {
+      this._progressPct = (currentTime / duration) * 100
+      this.progressFill.style.width = `${this._progressPct}%`
+    }
+    this._notifyChange()
   }
 
   _updateActiveTrack() {
@@ -487,9 +557,11 @@ export class AudioPlayer {
   _updateInfo(name, index) {
     this.trackNameEl.textContent = cleanName(name)
     this.trackIndexEl.textContent = `${index + 1} / ${this.tracks.length}`
+    this._notifyChange()
   }
 
   _setPlayingState(playing) {
+    this._playing = playing
     this.btnPlay.querySelector('.icon-play').style.display = playing
       ? 'none'
       : ''
@@ -497,6 +569,7 @@ export class AudioPlayer {
       ? ''
       : 'none'
     this.artworkInner?.classList.toggle('is-playing', playing)
+    this._notifyChange()
   }
 
   _showLoading(show) {
