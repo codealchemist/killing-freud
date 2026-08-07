@@ -5,7 +5,7 @@ import { renderSharingForAlbum } from './sharing.js'
 import { version } from '../../package.json'
 import * as DemoMode from './demo-mode.js'
 import { initDropZone } from './drop-zone.js'
-import { initShareButton, initIncomingSession } from './demo-share-ui.js'
+import { initShareButton, shareDemoSession, initIncomingSession } from './demo-share-ui.js'
 import { initMultitrack } from './multitrack-ui.js'
 import { initAlbumModal } from './album-modal.js'
 import { initAlbumCatalog } from './album-catalog.js'
@@ -187,7 +187,7 @@ if (DemoMode.isActive() && demoBanner) {
         hasLyrics: false,
         hasSharing: false
       },
-      { editable: !DemoMode.isReceived(), tracks }
+      { editable: !DemoMode.isReceived(), tracks, onShare: () => shareDemoSession(tracks) }
     )
   })
 

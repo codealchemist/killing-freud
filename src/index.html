@@ -549,13 +549,41 @@
       aria-labelledby="albumModalTitle"
     >
       <div class="album-modal__box">
-        <button
-          class="album-modal__close"
-          id="albumModalClose"
-          aria-label="Close"
-        >
-          &#x2715;
-        </button>
+        <div class="album-modal__header-actions">
+          <button
+            type="button"
+            class="album-modal__share"
+            id="albumModalShare"
+            hidden
+            aria-label="Share this session"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="14"
+              height="14"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.6" y1="10.6" x2="15.4" y2="6.4" />
+              <line x1="8.6" y1="13.4" x2="15.4" y2="17.6" />
+            </svg>
+            Share
+          </button>
+          <button
+            class="album-modal__close"
+            id="albumModalClose"
+            aria-label="Close"
+          >
+            &#x2715;
+          </button>
+        </div>
 
         <div class="album-modal__header">
           <div class="music-header__art-area" id="musicArtArea" hidden>

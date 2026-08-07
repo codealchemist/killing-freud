@@ -7,6 +7,7 @@ export function initAlbumModal({ onOpen, onClose } = {}) {
   if (!modal) return null
 
   const closeBtn = document.getElementById('albumModalClose')
+  const shareBtn = document.getElementById('albumModalShare')
   const titleEl = document.getElementById('albumModalTitle')
   const blurbEl = document.getElementById('albumModalBlurb')
   const artAreaEl = document.getElementById('musicArtArea')
@@ -70,6 +71,7 @@ export function initAlbumModal({ onOpen, onClose } = {}) {
 
     if (tabLyricsBtn) tabLyricsBtn.hidden = !album.hasLyrics
     if (tabSharingBtn) tabSharingBtn.hidden = !album.hasSharing
+    if (shareBtn) shareBtn.hidden = !opts.onShare
 
     document.body.style.overflow = 'hidden'
     modal.hidden = false
@@ -88,6 +90,7 @@ export function initAlbumModal({ onOpen, onClose } = {}) {
   }
 
   closeBtn?.addEventListener('click', close)
+  shareBtn?.addEventListener('click', () => currentOpts.onShare?.())
   modal.addEventListener('click', e => {
     if (e.target === modal) close()
   })
