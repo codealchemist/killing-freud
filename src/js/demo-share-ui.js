@@ -27,22 +27,24 @@ function clearArtBackground(el) {
   el.style.backgroundPosition = ''
 }
 
-// ─── Share button (shown in demo banner) ──────────────────
+// ─── Share button (shown in demo banner, and in the album modal header) ───
+
+export function shareDemoSession(tracks) {
+  if (!document.getElementById('shareModal')?.hidden) return
+  openShareModal({
+    kind: 'demo',
+    tracks,
+    name: getAlbumName(),
+    art: getAlbumArt(),
+    metadata: null
+  })
+}
 
 export function initShareButton(tracks) {
   const btn = document.getElementById('demoBannerShare')
   if (!btn) return
   btn.hidden = false
-  btn.addEventListener('click', () => {
-    if (!document.getElementById('shareModal')?.hidden) return
-    openShareModal({
-      kind: 'demo',
-      tracks,
-      name: getAlbumName(),
-      art: getAlbumArt(),
-      metadata: null
-    })
-  })
+  btn.addEventListener('click', () => shareDemoSession(tracks))
 }
 
 // ─── Share button (shown in the multitrack editor) ────────
