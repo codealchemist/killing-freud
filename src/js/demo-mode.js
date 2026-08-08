@@ -1,10 +1,11 @@
 import { saveDemoTrack, getAllDemoTracks, clearDemoTracks } from './offline-storage.js'
 
-const ACTIVE_KEY   = 'kf_demo_active'
-const IDS_KEY      = 'kf_demo_track_ids'
-const ALBUM_KEY    = 'kf_demo_album'
-const ART_KEY      = 'kf_demo_art'
-const RECEIVED_KEY = 'kf_demo_received'
+const ACTIVE_KEY      = 'kf_demo_active'
+const IDS_KEY         = 'kf_demo_track_ids'
+const ALBUM_KEY       = 'kf_demo_album'
+const ART_KEY         = 'kf_demo_art'
+const RECEIVED_KEY    = 'kf_demo_received'
+const SHARE_COUNT_KEY = 'kf_demo_share_count'
 
 export function isActive() {
   return localStorage.getItem(ACTIVE_KEY) === 'true'
@@ -29,6 +30,18 @@ export function setAlbumArt(dataUrl) {
 
 export function isReceived() {
   return localStorage.getItem(RECEIVED_KEY) === 'true'
+}
+
+// Lifetime count of completed demo-session shares — survives exiting/
+// re-entering demo mode, since it's a running tally, not per-session state.
+export function getShareCount() {
+  return parseInt(localStorage.getItem(SHARE_COUNT_KEY) || '0', 10)
+}
+
+export function incrementShareCount() {
+  const next = getShareCount() + 1
+  localStorage.setItem(SHARE_COUNT_KEY, String(next))
+  return next
 }
 
 export async function enter(files, albumName = 'DEMO', received = false, albumArt = null) {

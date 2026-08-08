@@ -5,7 +5,6 @@ import { renderSharingForAlbum } from './sharing.js'
 import { version } from '../../package.json'
 import * as DemoMode from './demo-mode.js'
 import { initDropZone } from './drop-zone.js'
-import { initShareButton, shareDemoSession, initIncomingSession } from './demo-share-ui.js'
 import { initMultitrack } from './multitrack-ui.js'
 import { initAlbumModal } from './album-modal.js'
 import { initAlbumCatalog } from './album-catalog.js'
@@ -100,6 +99,9 @@ if (yearEl) yearEl.textContent = new Date().getFullYear()
 const versionEl = document.getElementById('footerVersion')
 if (versionEl) versionEl.textContent = `v${version}`
 
+const navVersionEl = document.getElementById('navVersion')
+if (navVersionEl) navVersionEl.textContent = `v${version}`
+
 // ─── Multitrack editor ─────────────────────────────────────
 const multitrack = initMultitrack()
 
@@ -176,19 +178,58 @@ if (DemoMode.isActive() && demoBanner) {
 
   if (hintEl) hintEl.textContent = `Listening to ${DemoMode.getAlbumName()}`
 
+  // The WebRTC/QR sharing stack (demo-share-ui.js and its dependencies) is
+  // sizeable and irrelevant to just listening to dropped tracks, so it's
+  // only fetched once a Share button is actually clicked — not bundled into
+  // the code that has to load/run right after a drop reloads the page.
+  const triggerDemoShare = tracks =>
+    import('./demo-share-ui.js').then(({ shareDemoSession }) => shareDemoSession(tracks))
+
+  const bannerCountEl = document.getElementById('demoBannerShareCount')
+  const bannerCountNumberEl = document.getElementById('demoBannerShareCountNumber')
+  const refreshBannerCount = () => {
+    if (!bannerCountEl) return
+    const count = DemoMode.getShareCount()
+    const label = count === 1 ? '1 share' : `${count} shares`
+    if (bannerCountNumberEl) bannerCountNumberEl.textContent = String(count)
+    bannerCountEl.setAttribute('aria-label', label)
+    bannerCountEl.title = label
+    bannerCountEl.hidden = false
+  }
+
   DemoMode.getTracks().then(tracks => {
-    initShareButton(tracks)
-    albumModal?.open(
-      {
-        slug: '__demo__',
-        title: DemoMode.getAlbumName(),
-        subtitle: '',
-        artUrl: demoArt,
-        hasLyrics: false,
-        hasSharing: false
-      },
-      { editable: !DemoMode.isReceived(), tracks, onShare: () => shareDemoSession(tracks) }
-    )
+    const openDemo = tab => {
+      albumModal?.open(
+        {
+          slug: '__demo__',
+          title: DemoMode.getAlbumName(),
+          subtitle: '',
+          artUrl: demoArt,
+          hasLyrics: false,
+          hasSharing: false
+        },
+        {
+          editable: !DemoMode.isReceived(),
+          tracks,
+          onShare: () => triggerDemoShare(tracks),
+          shareCount: () => DemoMode.getShareCount(),
+          tab
+        }
+      )
+    }
+
+    // The banner's own button just gets the player/sharing view back on
+    // screen — closing the modal previously left no way back to it (the
+    // banner used to fire a direct "Share" action here instead, which made
+    // no sense once you'd already dismissed the view you'd share from).
+    const bannerOpenBtn = document.getElementById('demoBannerOpen')
+    if (bannerOpenBtn) {
+      bannerOpenBtn.hidden = false
+      bannerOpenBtn.addEventListener('click', () => openDemo('player'))
+    }
+    refreshBannerCount()
+
+    openDemo('player')
   })
 
   if (!DemoMode.isReceived()) {
@@ -252,7 +293,9 @@ if (shareParam) {
   // Strip control characters and cap length; textContent handles the rest
   const rawName = _qs.get('name') ?? _qs.get('album') ?? ''
   const nameParam = rawName.replace(/[\x00-\x1f\x7f]/g, '').trim().slice(0, 60)
-  initIncomingSession(shareParam, kind, nameParam || undefined)
+  import('./demo-share-ui.js').then(({ initIncomingSession }) =>
+    initIncomingSession(shareParam, kind, nameParam || undefined)
+  )
 }
 
 // ─── Deep link: open a specific album directly (?album=<slug>) ────

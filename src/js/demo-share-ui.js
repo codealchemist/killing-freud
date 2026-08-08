@@ -1,6 +1,6 @@
 import { DemoShare } from './demo-share.js'
 import { renderQR } from './qr.js'
-import { enter, getAlbumName, getAlbumArt } from './demo-mode.js'
+import { enter, getAlbumName, getAlbumArt, incrementShareCount } from './demo-mode.js'
 import { importSession as importMultitrackSession } from './multitrack-storage.js'
 
 const MODAL_TITLES = {
@@ -27,7 +27,35 @@ function clearArtBackground(el) {
   el.style.backgroundPosition = ''
 }
 
-// ─── Share button (shown in demo banner, and in the album modal header) ───
+// Updates the lifetime share-count badges in place so a just-completed
+// transfer shows up immediately, in both places it can appear: the album
+// modal header (stays mounted underneath the share overlay for the whole
+// session — see also opts.shareCount in album-modal.js's open(), which
+// covers the reload/reopen path) and the persistent demo banner (always on
+// screen, open or closed).
+function renderShareCountBadges(count) {
+  const label = count === 1 ? '1 share' : `${count} shares`
+
+  const modalEl = document.getElementById('albumModalShareCount')
+  const modalNumberEl = document.getElementById('albumModalShareCountNumber')
+  if (modalEl) {
+    if (modalNumberEl) modalNumberEl.textContent = String(count)
+    modalEl.setAttribute('aria-label', label)
+    modalEl.title = label
+    modalEl.hidden = count === 0
+  }
+
+  const bannerEl = document.getElementById('demoBannerShareCount')
+  const bannerNumberEl = document.getElementById('demoBannerShareCountNumber')
+  if (bannerEl) {
+    if (bannerNumberEl) bannerNumberEl.textContent = String(count)
+    bannerEl.setAttribute('aria-label', label)
+    bannerEl.title = label
+  }
+}
+
+// ─── Share trigger (called lazily via dynamic import once a Share button
+// is clicked, so the WebRTC/QR machinery never loads on an ordinary visit) ──
 
 export function shareDemoSession(tracks) {
   if (!document.getElementById('shareModal')?.hidden) return
@@ -40,27 +68,12 @@ export function shareDemoSession(tracks) {
   })
 }
 
-export function initShareButton(tracks) {
-  const btn = document.getElementById('demoBannerShare')
-  if (!btn) return
-  btn.hidden = false
-  btn.addEventListener('click', () => shareDemoSession(tracks))
-}
+// ─── Share trigger (called lazily from the multitrack editor) ─────────────
 
-// ─── Share button (shown in the multitrack editor) ────────
-
-// `sessionProvider` is called fresh on every click and must resolve to
-// `{ name, tracks, metadata }` for the currently open session, since unlike
-// demo mode, a multitrack session can keep changing after the page loads.
-export function initMultitrackShareButton(sessionProvider) {
-  const btn = document.getElementById('multitrackShareBtn')
-  if (!btn) return
-  btn.addEventListener('click', async () => {
-    if (!document.getElementById('shareModal')?.hidden) return
-    const { name, tracks, metadata } = await sessionProvider()
-    if (!tracks?.length) return
-    openShareModal({ kind: 'multitrack', tracks, name, art: null, metadata })
-  })
+export function shareMultitrackSession({ name, tracks, metadata }) {
+  if (!tracks?.length) return
+  if (!document.getElementById('shareModal')?.hidden) return
+  openShareModal({ kind: 'multitrack', tracks, name, art: null, metadata })
 }
 
 // ─── Share modal (host/sender) ────────────────────────────
@@ -163,6 +176,7 @@ async function openShareModal({ kind, tracks, name, art, metadata }) {
           await share.sendTracks(tracks, { kind, name, art, metadata })
           sharedCount++
           updateCount()
+          if (kind === 'demo') renderShareCountBadges(incrementShareCount())
           sessionStateEl.hidden = true
           completeStateEl.hidden = false
         } catch (err) {
