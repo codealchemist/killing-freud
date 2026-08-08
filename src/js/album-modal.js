@@ -8,6 +8,8 @@ export function initAlbumModal({ onOpen, onClose } = {}) {
 
   const closeBtn = document.getElementById('albumModalClose')
   const shareBtn = document.getElementById('albumModalShare')
+  const shareCountEl = document.getElementById('albumModalShareCount')
+  const shareCountNumberEl = document.getElementById('albumModalShareCountNumber')
   const titleEl = document.getElementById('albumModalTitle')
   const blurbEl = document.getElementById('albumModalBlurb')
   const artAreaEl = document.getElementById('musicArtArea')
@@ -72,6 +74,18 @@ export function initAlbumModal({ onOpen, onClose } = {}) {
     if (tabLyricsBtn) tabLyricsBtn.hidden = !album.hasLyrics
     if (tabSharingBtn) tabSharingBtn.hidden = !album.hasSharing
     if (shareBtn) shareBtn.hidden = !opts.onShare
+    if (shareCountEl) {
+      // `shareCount` is a getter (not a static number) so it re-reads the
+      // live tally on every open — including a reopen via the mini player,
+      // which replays the same opts object it was handed when the album
+      // first loaded, long before any share may have completed.
+      const count = opts.onShare ? opts.shareCount?.() ?? 0 : 0
+      const label = count === 1 ? '1 share' : `${count} shares`
+      if (shareCountNumberEl) shareCountNumberEl.textContent = String(count)
+      shareCountEl.setAttribute('aria-label', label)
+      shareCountEl.title = label
+      shareCountEl.hidden = count === 0
+    }
 
     document.body.style.overflow = 'hidden'
     modal.hidden = false

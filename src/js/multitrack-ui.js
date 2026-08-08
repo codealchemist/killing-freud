@@ -1,7 +1,6 @@
 import * as MTStorage from './multitrack-storage.js'
 import { MultitrackPlayer } from './multitrack-player.js'
 import { initInlineEdit } from './utils.js'
-import { initMultitrackShareButton } from './demo-share-ui.js'
 
 function escapeHtml(str) {
   const div = document.createElement('div')
@@ -226,9 +225,13 @@ export function initMultitrack() {
     }
   })
 
-  initMultitrackShareButton(async () => {
+  // Sharing pulls in the WebRTC/QR stack (demo-share-ui.js), so it's only
+  // fetched once the button is actually clicked — see the matching demo-mode
+  // deferral in main.js for why.
+  document.getElementById('multitrackShareBtn')?.addEventListener('click', async () => {
     const tracks = await MTStorage.getSessionTracks(currentSession.id)
-    return {
+    const { shareMultitrackSession } = await import('./demo-share-ui.js')
+    shareMultitrackSession({
       name: currentSession.name,
       tracks: tracks.map(t => ({
         id: t.id,
@@ -237,7 +240,7 @@ export function initMultitrack() {
         blob: t.blob
       })),
       metadata: { trackState: tracks.map(t => t.state) }
-    }
+    })
   })
 
   initCollapsibleText(section)

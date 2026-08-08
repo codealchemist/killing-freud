@@ -51,13 +51,40 @@
       <span class="demo-banner__hint" id="demoBannerHint"
         >Listening to your dropped files</span
       >
-      <button
-        class="demo-banner__share"
-        id="demoBannerShare"
+      <span
+        class="demo-banner__share-count"
+        id="demoBannerShareCount"
         hidden
-        aria-label="Share demo session"
+        role="status"
+        aria-label="0 shares"
+        title="0 shares"
       >
-        Share
+        <svg
+          viewBox="0 0 24 24"
+          width="10"
+          height="10"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.6" y1="10.6" x2="15.4" y2="6.4" />
+          <line x1="8.6" y1="13.4" x2="15.4" y2="17.6" />
+        </svg>
+        <span id="demoBannerShareCountNumber">0</span>
+      </span>
+      <button
+        class="demo-banner__open"
+        id="demoBannerOpen"
+        hidden
+        aria-label="Open player"
+      >
+        Open
       </button>
       <button
         class="demo-banner__exit"
@@ -193,6 +220,7 @@
     <nav class="nav" id="nav">
       <div class="nav__logo">
         <a href="#hero">Killing Freud</a>
+        <span class="nav__version" id="navVersion"></span>
       </div>
       <div class="mini-player-slot" id="miniPlayerHeaderSlot"></div>
       <ul class="nav__links">
@@ -550,6 +578,32 @@
     >
       <div class="album-modal__box">
         <div class="album-modal__header-actions">
+          <span
+            class="album-modal__share-count"
+            id="albumModalShareCount"
+            hidden
+            role="status"
+            title="0 shares"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="10"
+              height="10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="18" cy="5" r="3" />
+              <circle cx="6" cy="12" r="3" />
+              <circle cx="18" cy="19" r="3" />
+              <line x1="8.6" y1="10.6" x2="15.4" y2="6.4" />
+              <line x1="8.6" y1="13.4" x2="15.4" y2="17.6" />
+            </svg>
+            <span id="albumModalShareCountNumber">0</span>
+          </span>
           <button
             type="button"
             class="album-modal__share"
