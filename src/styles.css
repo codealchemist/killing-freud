@@ -942,9 +942,20 @@ input[type='range'] {
   padding: 12px 0;
 }
 
+/* Fixed (not auto) widths for the meta/offline columns so this row's grid
+   and .tracklist__header's grid always land on identical column edges,
+   regardless of which one's content happens to be wider. */
+.tracklist__header {
+  display: grid;
+  grid-template-columns: 32px 1fr 76px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px 6px;
+}
+
 .tracklist__item {
   display: grid;
-  grid-template-columns: 32px 1fr auto auto;
+  grid-template-columns: 32px 1fr 76px auto;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
@@ -990,9 +1001,55 @@ input[type='range'] {
   color: var(--accent-hover);
 }
 
-.tracklist__size {
+.tracklist__meta {
   font-size: 0.75rem;
   color: var(--text-dim);
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Segmented pill — the filled segment is the enabled/showing unit, the
+   flat one is the disabled/other option. A solid accent fill (rather than
+   a dim wash) on the active side keeps the two states unambiguous even at
+   a glance, since it's the only filled shape in the row. */
+.tracklist__meta-toggle {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.tracklist__meta-toggle-btn {
+  padding: 3px 8px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    color var(--transition),
+    background var(--transition);
+}
+
+.tracklist__meta-toggle-btn:hover {
+  color: var(--text);
+}
+
+.tracklist__meta-toggle-btn.is-active {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.tracklist__meta-toggle-btn.is-active:hover {
+  color: var(--bg);
 }
 
 /* ===========================
@@ -1806,7 +1863,7 @@ cite {
    Tracklist — Demo Mode
    =========================== */
 .tracklist__item.is-demo {
-  grid-template-columns: 32px 1fr auto;
+  grid-template-columns: 32px 1fr 76px;
 }
 
 /* ===========================

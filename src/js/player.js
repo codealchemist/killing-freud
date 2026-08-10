@@ -48,6 +48,13 @@ export class AudioPlayer {
     this._fadeRafId = null
     // Subscribers (mini-player.js) notified on every playback/track change.
     this._changeListeners = []
+    // Track durations, probed lazily and cached by track id — shared
+    // between the tracklist's "time" column and the album summary text,
+    // so each track is only probed once regardless of how many times the
+    // tracklist re-renders or the meta column toggle is flipped.
+    this._durations = new Map()
+    this._metaMode = 'time' // 'time' | 'size' — which the tracklist shows
+    this._tracklistHeaderEl = null
 
     this.btnPlay = document.getElementById('btnPlay')
     this.btnPrev = document.getElementById('btnPrev')
@@ -381,6 +388,7 @@ export class AudioPlayer {
 
   _renderTracklist() {
     if (this.tracks.length === 0) {
+      this._tracklistHeaderEl?.remove()
       if (!this.tracklistEmptyEl.parentNode)
         this.tracklistEl.appendChild(this.tracklistEmptyEl)
       this.tracklistEmptyEl.textContent = 'No tracks found.'
@@ -390,6 +398,7 @@ export class AudioPlayer {
     this.tracklistEl
       .querySelectorAll('.tracklist__item')
       .forEach(el => el.remove())
+    this._ensureTracklistHeader()
 
     this.tracks.forEach((track, i) => {
       const { icon, label } = offlineBtnAttrs(track.offlineState)
@@ -405,7 +414,7 @@ export class AudioPlayer {
       item.innerHTML = `
         <span class="tracklist__num">${i + 1}</span>
         <span class="tracklist__name">${cleanName(track.name)}</span>
-        <span class="tracklist__size">${formatSize(track.size)}</span>
+        <span class="tracklist__meta">${this._metaText(track)}</span>
         ${offlineBtn}
       `
       item.addEventListener('click', e => {
@@ -413,6 +422,82 @@ export class AudioPlayer {
         this.playTrack(i)
       })
       this.tracklistEl.appendChild(item)
+    })
+
+    this._refreshTrackDurations()
+  }
+
+  // ─── Track meta column (time / size toggle) ────────────────
+
+  _metaText(track) {
+    if (this._metaMode === 'size') return formatSize(track.size)
+    const duration = this._durations.get(track.id)
+    return duration != null ? this._formatTime(duration) : '—'
+  }
+
+  _setItemMeta(index) {
+    const el = this.tracklistEl.querySelector(
+      `.tracklist__item[data-index="${index}"] .tracklist__meta`
+    )
+    if (el) el.textContent = this._metaText(this.tracks[index])
+  }
+
+  _setMetaMode(mode) {
+    if (this._metaMode === mode) return
+    this._metaMode = mode
+    this._updateMetaToggleUI()
+    this.tracks.forEach((_, i) => this._setItemMeta(i))
+  }
+
+  _ensureTracklistHeader() {
+    if (!this._tracklistHeaderEl) {
+      const header = document.createElement('div')
+      header.className = 'tracklist__header'
+      header.innerHTML = `
+        <span></span>
+        <span></span>
+        <div class="tracklist__meta-toggle" role="group" aria-label="Track info display">
+          <button type="button" class="tracklist__meta-toggle-btn" data-mode="time" title="Track length">s</button>
+          <button type="button" class="tracklist__meta-toggle-btn" data-mode="size" title="File size">MB</button>
+        </div>
+      `
+      header.querySelectorAll('.tracklist__meta-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', () => this._setMetaMode(btn.dataset.mode))
+      })
+      this._tracklistHeaderEl = header
+      this._updateMetaToggleUI()
+    }
+    this.tracklistEl.insertBefore(this._tracklistHeaderEl, this.tracklistEl.firstChild)
+  }
+
+  _updateMetaToggleUI() {
+    const buttons = this._tracklistHeaderEl?.querySelectorAll('.tracklist__meta-toggle-btn')
+    buttons?.forEach(btn => {
+      const active = btn.dataset.mode === this._metaMode
+      btn.classList.toggle('is-active', active)
+      btn.setAttribute('aria-pressed', String(active))
+    })
+  }
+
+  // Probes (and caches) the duration of every track not already known, so
+  // the "time" column fills in progressively without re-fetching metadata
+  // already learned from an earlier render or album visit.
+  _refreshTrackDurations() {
+    const tracksSnapshot = this.tracks
+    tracksSnapshot.forEach((track, i) => {
+      this._getDuration(track).then(() => {
+        // A different album may have loaded while this was in flight.
+        if (this.tracks !== tracksSnapshot) return
+        if (this._metaMode === 'time') this._setItemMeta(i)
+      })
+    })
+  }
+
+  _getDuration(track) {
+    if (this._durations.has(track.id)) return Promise.resolve(this._durations.get(track.id))
+    return this._probeDuration(track).then(d => {
+      this._durations.set(track.id, d)
+      return d
     })
   }
 
@@ -634,17 +719,24 @@ export class AudioPlayer {
     if (count === 0) { el.hidden = true; return }
 
     const label = n => `${n} song${n !== 1 ? 's' : ''}`
-    el.textContent = label(count)
+    // Size is already known synchronously (unlike duration, which needs
+    // probing), so it's part of the text from the very first render.
+    const totalBytes = this.tracks.reduce((s, t) => s + (t.size || 0), 0)
+    const sizeStr = totalBytes > 0 ? ` (${formatSize(totalBytes)})` : ''
+    el.textContent = `${label(count)}${sizeStr}`
     el.hidden = false
 
-    // Probe all track durations in parallel; update text once resolved.
-    Promise.allSettled(this.tracks.map(t => this._probeDuration(t)))
+    // Shares the same probe/cache as the tracklist's "time" column
+    // (_getDuration), so a track is never fetched twice.
+    const tracksSnapshot = this.tracks
+    Promise.allSettled(tracksSnapshot.map(t => this._getDuration(t)))
       .then(results => {
+        if (this.tracks !== tracksSnapshot) return
         const total = results.reduce(
           (s, r) => s + (r.status === 'fulfilled' ? (r.value || 0) : 0), 0
         )
         if (total > 0)
-          el.textContent = `${label(count)}, ${this._formatAlbumDuration(total)}`
+          el.textContent = `${label(count)}, ${this._formatAlbumDuration(total)}${sizeStr}`
       })
   }
 
