@@ -45,6 +45,7 @@ export class AudioPlayer {
     this._currentSlug = null
     this._playing = false
     this._progressPct = 0
+    this._fadeRafId = null
     // Subscribers (mini-player.js) notified on every playback/track change.
     this._changeListeners = []
 
@@ -349,6 +350,7 @@ export class AudioPlayer {
     this.currentIndex = index
     this._updateActiveTrack()
     this._updateInfo(track.name, index)
+    this._cancelFade()
     this.audio.pause()
 
     if (this._currentObjectURL) {
@@ -479,6 +481,9 @@ export class AudioPlayer {
     this.btnPrev.addEventListener('click', () => this._prevTrack())
     this.btnNext.addEventListener('click', () => this._nextTrack())
     this.volumeSlider.addEventListener('input', () => {
+      // A manual volume change mid-fade means the user is taking explicit
+      // control right now — stop overriding it and just apply their value.
+      this._cancelFade()
       this.audio.volume = parseFloat(this.volumeSlider.value)
     })
     this.progressBar.addEventListener('click', e => {
@@ -518,6 +523,37 @@ export class AudioPlayer {
   togglePlay() { this._togglePlay() }
   next() { this._nextTrack() }
   prev() { this._prevTrack() }
+  pause() { this.audio.pause() }
+
+  // Ramps volume to 0 over `ms`, pauses, then restores the volume slider's
+  // value — used by the sleep timer so playback doesn't end with an abrupt
+  // cut. A no-op if nothing is playing.
+  fadeOutAndPause(ms = 8000) {
+    if (this.audio.paused) return
+    this._cancelFade()
+    const startVolume = this.audio.volume
+    const startTime = performance.now()
+
+    const step = now => {
+      const t = Math.min(1, (now - startTime) / ms)
+      this.audio.volume = startVolume * (1 - t)
+      if (t < 1 && !this.audio.paused) {
+        this._fadeRafId = requestAnimationFrame(step)
+      } else {
+        this._fadeRafId = null
+        this.audio.pause()
+        this.audio.volume = startVolume
+      }
+    }
+    this._fadeRafId = requestAnimationFrame(step)
+  }
+
+  _cancelFade() {
+    if (this._fadeRafId == null) return
+    cancelAnimationFrame(this._fadeRafId)
+    this._fadeRafId = null
+    this.audio.volume = parseFloat(this.volumeSlider.value)
+  }
 
   // Registers a listener notified with `{ trackName, index, total, playing,
   // progress }` on every playback/track-selection change.

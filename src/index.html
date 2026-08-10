@@ -902,6 +902,57 @@
                     aria-label="Volume"
                   />
                 </div>
+
+                <div class="player__sleep">
+                  <button
+                    type="button"
+                    class="player__sleep-btn"
+                    id="btnSleepTimer"
+                    aria-haspopup="true"
+                    aria-expanded="false"
+                    aria-label="Sleep timer"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      width="16"
+                      height="16"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+                    </svg>
+                    <span
+                      class="player__sleep-remaining"
+                      id="sleepTimerRemaining"
+                      hidden
+                    ></span>
+                  </button>
+                  <div
+                    class="player__sleep-menu"
+                    id="sleepTimerMenu"
+                    hidden
+                    role="menu"
+                    aria-label="Sleep timer duration"
+                  >
+                    <button type="button" class="player__sleep-option" data-minutes="5">5 min</button>
+                    <button type="button" class="player__sleep-option" data-minutes="15">15 min</button>
+                    <button type="button" class="player__sleep-option" data-minutes="30">30 min</button>
+                    <button type="button" class="player__sleep-option" data-minutes="45">45 min</button>
+                    <button type="button" class="player__sleep-option" data-minutes="60">60 min</button>
+                    <button
+                      type="button"
+                      class="player__sleep-option player__sleep-option--off"
+                      id="sleepTimerOff"
+                      hidden
+                    >
+                      Turn off
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <!-- Progress bar -->
