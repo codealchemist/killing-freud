@@ -10,6 +10,8 @@ import { initAlbumModal } from './album-modal.js'
 import { initAlbumCatalog } from './album-catalog.js'
 import { initMiniPlayer } from './mini-player.js'
 import { initInlineEdit } from './utils.js'
+import { createSleepTimer } from './sleep-timer.js'
+import { initSleepTimerUI } from './sleep-timer-ui.js'
 
 // ─── Service Worker (PWA + offline) ───────────────────────
 if ('serviceWorker' in navigator) {
@@ -129,7 +131,14 @@ const albumCatalog = initAlbumCatalog(albumModal)
 
 // ─── Audio Player (loaded per-album by the modal) ─────────
 const player = new AudioPlayer()
-miniPlayer = initMiniPlayer({ player, albumModal })
+
+// ─── Sleep timer — independent of any album; switching tracks/albums or
+// normal playback (pause, skip, volume) never touches it, only an explicit
+// cancel or its own expiry does ──
+const sleepTimer = createSleepTimer()
+initSleepTimerUI({ sleepTimer, player })
+
+miniPlayer = initMiniPlayer({ player, albumModal, sleepTimer })
 
 albumModal?.setPlayerLoader((album, opts) => {
   player.loadAlbum(album, opts)

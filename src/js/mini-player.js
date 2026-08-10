@@ -1,9 +1,11 @@
+import { formatRemaining } from './sleep-timer-ui.js'
+
 // Persistent playback control shown once a track is active and the album
 // modal is closed. One DOM node, moved between a header slot (desktop, when
 // there's room) and a subheader slot (mobile, or whenever the nav would
 // otherwise overflow) — never duplicated, so play state/progress never
 // needs to be kept in sync across two copies.
-export function initMiniPlayer({ player, albumModal }) {
+export function initMiniPlayer({ player, albumModal, sleepTimer }) {
   const headerSlot = document.getElementById('miniPlayerHeaderSlot')
   const subheaderSlot = document.getElementById('miniPlayerSubheaderSlot')
   const subheaderEl = document.getElementById('subheader')
@@ -42,6 +44,7 @@ export function initMiniPlayer({ player, albumModal }) {
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6h2v12h-2z"/></svg>
       </button>
     </div>
+    <span class="mini-player__sleep" id="miniPlayerSleep" hidden></span>
     <div class="mini-player__progress"><div class="mini-player__progress-fill" id="miniPlayerProgressFill"></div></div>
   `
 
@@ -52,6 +55,7 @@ export function initMiniPlayer({ player, albumModal }) {
   const btnPlay = el.querySelector('.mini-player__btn--play')
   const btnNext = el.querySelector('.mini-player__btn--next')
   const progressFill = el.querySelector('#miniPlayerProgressFill')
+  const sleepEl = el.querySelector('#miniPlayerSleep')
 
   btnPrev.addEventListener('click', () => player.prev())
   btnNext.addEventListener('click', () => player.next())
@@ -105,6 +109,23 @@ export function initMiniPlayer({ player, albumModal }) {
     latest = snapshot
     render()
     updateVisibility()
+  })
+
+  // Passive indicator only — no click handler of its own. The full sleep
+  // timer control (with the cancel/change-duration menu) lives in the
+  // player panel; clicking anywhere in .mini-player__info already reopens
+  // that view, same as it does for every other detail shown here.
+  const sleepIcon =
+    '<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>'
+  sleepTimer?.onTick(remainingMs => {
+    if (!sleepEl) return
+    if (remainingMs == null) {
+      sleepEl.hidden = true
+      sleepEl.innerHTML = ''
+    } else {
+      sleepEl.hidden = false
+      sleepEl.innerHTML = `${sleepIcon}<span>${formatRemaining(remainingMs)}</span>`
+    }
   })
 
   return {

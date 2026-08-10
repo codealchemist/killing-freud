@@ -577,7 +577,7 @@ input[type='range'] {
 
 .player__main {
   display: grid;
-  grid-template-columns: 80px 1fr auto auto;
+  grid-template-columns: 80px 1fr auto auto auto;
   align-items: center;
   gap: 20px;
   margin-bottom: 20px;
@@ -606,6 +606,12 @@ input[type='range'] {
 
   .player__volume {
     grid-column: 1 / -1;
+  }
+
+  .player__sleep {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
   }
 
   /* Album art as player background on mobile */
@@ -777,6 +783,88 @@ input[type='range'] {
   border-radius: 50%;
   background: var(--accent);
   cursor: pointer;
+}
+
+/* Sleep timer */
+.player__sleep {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.player__sleep-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 16px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  transition:
+    color var(--transition),
+    background var(--transition);
+}
+
+.player__sleep-btn:hover,
+.player__sleep-btn[aria-expanded='true'] {
+  color: var(--text);
+  background: var(--surface-2);
+}
+
+.player__sleep-btn.is-active {
+  color: var(--accent-hover);
+}
+
+.player__sleep-remaining {
+  font-variant-numeric: tabular-nums;
+}
+
+.player__sleep-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.player__sleep-option {
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.player__sleep-option:hover {
+  background: var(--surface-2);
+}
+
+.player__sleep-option.is-selected {
+  color: var(--accent-hover);
+}
+
+.player__sleep-option--off {
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
 }
 
 /* Progress bar */
@@ -2911,6 +2999,16 @@ cite {
 
 .mini-player__btn--play {
   color: var(--text);
+}
+
+.mini-player__sleep {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  color: var(--accent-hover);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
 }
 
 .mini-player__progress {
