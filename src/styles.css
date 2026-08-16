@@ -2114,7 +2114,11 @@ cite {
 .incoming-session {
   position: fixed;
   inset: 0;
-  z-index: 600;
+  /* Above .album-modal/.multitrack-modal (600, same DOM-order tier would
+     otherwise let a previously-open demo album silently paint over this)
+     — a new incoming share should always interrupt whatever's already
+     open, not get buried behind it. */
+  z-index: 650;
   display: flex;
   align-items: center;
   justify-content: center;
