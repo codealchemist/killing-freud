@@ -32,8 +32,9 @@ export function isReceived() {
   return localStorage.getItem(RECEIVED_KEY) === 'true'
 }
 
-// Lifetime count of completed demo-session shares — survives exiting/
-// re-entering demo mode, since it's a running tally, not per-session state.
+// Count of completed shares for the *current* batch of tracks — reset by
+// enter() whenever new files are dropped or a new shared session is
+// received, so a previous batch's tally never carries over onto a new one.
 export function getShareCount() {
   return parseInt(localStorage.getItem(SHARE_COUNT_KEY) || '0', 10)
 }
@@ -60,6 +61,10 @@ export async function enter(files, albumName = 'DEMO', received = false, albumAr
   localStorage.setItem(RECEIVED_KEY, received ? 'true' : 'false')
   if (albumArt) localStorage.setItem(ART_KEY, albumArt)
   else localStorage.removeItem(ART_KEY)
+  // This batch of tracks is unrelated to whatever was shared before — drop
+  // the old share tally rather than carry it over. Covers both sides: a
+  // fresh drop and a newly received shared session both call enter().
+  localStorage.removeItem(SHARE_COUNT_KEY)
   location.reload()
 }
 
